@@ -5,14 +5,30 @@ import React,{useState,useEffect,useCallback} from 'react';
 // @ts-ignore — Capacitor haptics only available in native shell
 const tap=async(_style='Medium')=>{try{const mod=await(Function('return import("@capacitor/haptics")')());await mod.Haptics.impact({style:mod.ImpactStyle[_style]||mod.ImpactStyle.Medium});}catch{}};
 
-/* ─── LUXE Palette ─── */
-const C={
+/* ─── LUXE Dual Theme System ─── */
+/* Female: Gold/Rose luxury | Male: Blue/Steel masculine */
+const THEME_FEMALE={
   bg:'#FAF7F4',card:'#FFFFFF',card2:'#F5F0E8',primary:'#1A1A2E',accent:'#C8A96E',accentDark:'#A68B4B',
-  rose:'#B5505A',blush:'#E8C4C4',green:'#3D9970',greenDark:'#2D7A56',
+  secondary:'#B5505A',secondaryLight:'#E8C4C4',green:'#3D9970',greenDark:'#2D7A56',
   white:'#FFFFFF',black:'#1A1A2E',gray:'#6B6B80',grayLight:'#8B8B9E',grayLighter:'#E8E4DF',
   border:'#E8E4DF',text:'#1A1A2E',muted:'#8B8B9E',yellow:'#D4A017',
   red:'#D94F4F',purple:'#9B7DB8',teal:'#7DABB8',orange:'#D4A76A',blue:'#6B7DB5',
+  gradient1:'#C8A96E',gradient2:'#B5505A',
+  heroIcon:'💎',heroLabel:'LUXE',ctaLabel:'Book a Stylist',
+  navAccent:'#C8A96E',stylistAccent:'#B5505A',
 };
+const THEME_MALE={
+  bg:'#F0F4F8',card:'#FFFFFF',card2:'#E8EDF3',primary:'#1A2744',accent:'#2B6CB0',accentDark:'#1E4D8C',
+  secondary:'#3182CE',secondaryLight:'#BEE3F8',green:'#38A169',greenDark:'#276749',
+  white:'#FFFFFF',black:'#1A2744',gray:'#5A6B80',grayLight:'#8B9DB0',grayLighter:'#DAE1E9',
+  border:'#D2D9E3',text:'#1A2744',muted:'#7B8FA3',yellow:'#D69E2E',
+  red:'#E53E3E',purple:'#6B46C1',teal:'#319795',orange:'#C87533',blue:'#2B6CB0',
+  gradient1:'#2B6CB0',gradient2:'#1A365D',
+  heroIcon:'🔵',heroLabel:'LUXE',ctaLabel:'Book Now',
+  navAccent:'#2B6CB0',stylistAccent:'#3182CE',
+};
+// Default palette — will be overridden by theme context
+let C=THEME_FEMALE;
 
 /* ─── Shared inline helpers ─── */
 const flex=(dir='row' as any,align='center',justify='center',gap=0):React.CSSProperties=>({display:'flex',flexDirection:dir,alignItems:align,justifyContent:justify,gap});
@@ -127,13 +143,16 @@ export default function LuxeApp(){
   const[fade,setFade]=useState(true);
   const[userName,setUserName]=useState('');
   const[userId,setUserId]=useState('');
-  const[isOffline,setIsOffline]=useState(false);
+  const[gender,setGender]=useState<'male'|'female'|'non_binary'|'prefer_not_to_say'>('female');
+  const T=gender==='male'?THEME_MALE:THEME_FEMALE;
+  // Update global C reference for helpers that use it
+  C=T;  const[isOffline,setIsOffline]=useState(false);
 
   useEffect(()=>{setIsOffline(!navigator.onLine);const on=()=>setIsOffline(false);const off=()=>setIsOffline(true);window.addEventListener('online',on);window.addEventListener('offline',off);return()=>{window.removeEventListener('online',on);window.removeEventListener('offline',off)}},[]);
 
   const navigate=useCallback((s:string)=>{setFade(false);setTimeout(()=>{setScreen(s);setFade(true);window.scrollTo(0,0);},200);},[]);
 
-  const wrapper:React.CSSProperties={maxWidth:430,margin:'0 auto',minHeight:'100dvh',background:C.bg,fontFamily:"'DM Sans','SF Pro Display',-apple-system,sans-serif",color:C.text,position:'relative',overflow:'hidden',opacity:fade?1:0,transition:'opacity .2s'};
+  const wrapper:React.CSSProperties={maxWidth:430,margin:'0 auto',minHeight:'100dvh',background:T.bg,fontFamily:"'DM Sans','SF Pro Display',-apple-system,sans-serif",color:T.text,position:'relative',overflow:'hidden',opacity:fade?1:0,transition:'opacity .2s, background .4s'};
 
   return(
     <>
@@ -147,22 +166,22 @@ export default function LuxeApp(){
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
         @keyframes pulse-ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.5);opacity:0}}
         @keyframes bounce-in{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
-        @keyframes luxe-pulse{0%,100%{box-shadow:0 8px 30px rgba(200,169,110,0.25)}50%{box-shadow:0 8px 50px rgba(200,169,110,0.45)}}
+        @keyframes luxe-pulse{0%,100%{box-shadow:0 8px 30px ${T.accent}40}50%{box-shadow:0 8px 50px ${T.accent}70}}
         .anim-rise{animation:anim-rise .5s ease-out both}
         .anim-pop{animation:anim-pop .4s cubic-bezier(.34,1.56,.64,1) both}
         .anim-slide-up{animation:anim-slide-up .6s ease-out both}
         .anim-fade{animation:anim-fade .4s ease-out both}
         .anim-tab{animation:anim-tab .35s ease-out both}
-        body{margin:0;background:${C.bg}}
+        body{margin:0;background:${T.bg};transition:background .4s}
         *{box-sizing:border-box}
       `}</style>
       <div style={wrapper}>
-        {isOffline&&<div style={{position:'fixed',top:0,left:0,right:0,zIndex:200,background:C.red,color:'#fff',textAlign:'center',padding:6,fontSize:11,fontWeight:700}}>No internet connection</div>}
-        {screen==='landing'&&<Landing onBook={()=>navigate('auth-client')} onStylistPortal={()=>navigate('auth-stylist')}/>}
-        {screen==='auth-client'&&<AuthScreen role="client" onBack={()=>navigate('landing')} onLogin={(n,id)=>{setUserName(n);setUserId(id);navigate('client');}}/>}
-        {screen==='auth-stylist'&&<AuthScreen role="stylist" onBack={()=>navigate('landing')} onLogin={(n,id)=>{setUserName(n);setUserId(id);navigate('stylist');}}/>}
-        {screen==='client'&&<ClientApp userName={userName} userId={userId} onBack={()=>{setUserName('');setUserId('');navigate('landing');}}/>}
-        {screen==='stylist'&&<StylistDashboard userName={userName} userId={userId} onBack={()=>{setUserName('');setUserId('');navigate('landing');}}/>}
+        {isOffline&&<div style={{position:'fixed',top:0,left:0,right:0,zIndex:200,background:T.red,color:'#fff',textAlign:'center',padding:6,fontSize:11,fontWeight:700}}>No internet connection</div>}
+        {screen==='landing'&&<Landing T={T} onBook={()=>navigate('auth-client')} onStylistPortal={()=>navigate('auth-stylist')}/>}
+        {screen==='auth-client'&&<AuthScreen T={T} role="client" gender={gender} setGender={setGender} onBack={()=>navigate('landing')} onLogin={(n,id)=>{setUserName(n);setUserId(id);navigate('client');}}/>}
+        {screen==='auth-stylist'&&<AuthScreen T={T} role="stylist" gender={gender} setGender={setGender} onBack={()=>navigate('landing')} onLogin={(n,id)=>{setUserName(n);setUserId(id);navigate('stylist');}}/>}
+        {screen==='client'&&<ClientApp T={T} userName={userName} userId={userId} onBack={()=>{setUserName('');setUserId('');navigate('landing');}}/>}
+        {screen==='stylist'&&<StylistDashboard T={T} userName={userName} userId={userId} onBack={()=>{setUserName('');setUserId('');navigate('landing');}}/>}
       </div>
     </>
   );
@@ -171,16 +190,16 @@ export default function LuxeApp(){
 /* ════════════════════════════════════════ */
 /*          AUTH SCREEN                    */
 /* ════════════════════════════════════════ */
-const AuthScreen=({role,onBack,onLogin}:{role:string;onBack:()=>void;onLogin:(n:string,id:string)=>void})=>{
+const AuthScreen=({T,role,gender,setGender,onBack,onLogin}:{T:typeof THEME_FEMALE;role:string;gender:string;setGender:(g:any)=>void;onBack:()=>void;onLogin:(n:string,id:string)=>void})=>{
   const[mode,setMode]=useState('signin');
   const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[name,setName]=useState('');
   const[touched,setTouched]=useState<any>({});const[loading,setLoading]=useState(false);const[authError,setAuthError]=useState('');
 
   const isClient=role==='client';
-  const accent=isClient?C.accent:C.rose;
+  const accent=T.accent;
   const title=isClient?'Your Account':'Stylist Portal';
   const subtitle=isClient?'Book premium beauty services':'Join the LUXE network';
-  const icon=isClient?'💎':'✂️';
+  const icon=isClient?(gender==='male'?'🔵':'💎'):'✂️';
 
   const emailErr=touched.email&&!isValidEmail(email)?'Enter a valid email':'';
   const pwErr=touched.password&&password.length>0&&password.length<8?'Min 8 characters':'';
@@ -203,30 +222,44 @@ const AuthScreen=({role,onBack,onLogin}:{role:string;onBack:()=>void;onLogin:(n:
   };
 
   return(
-    <div style={{minHeight:'100dvh',background:C.bg,...flex('column','stretch','flex-start')}}>
+    <div style={{minHeight:'100dvh',background:T.bg,...flex('column','stretch','flex-start'),transition:'background .4s'}}>
       <div style={{padding:'16px 20px',...flex('row','center','space-between')}}>
-        <button onClick={onBack} style={{background:'transparent',border:'none',color:C.gray,fontSize:14,cursor:'pointer',fontWeight:600}}>← Back</button>
-        <div style={{fontWeight:800,fontSize:16,color:C.text,letterSpacing:1,fontFamily:"'Cormorant Garamond',serif"}}>LUXE</div>
+        <button onClick={onBack} style={{background:'transparent',border:'none',color:T.gray,fontSize:14,cursor:'pointer',fontWeight:600}}>← Back</button>
+        <div style={{fontWeight:800,fontSize:16,color:T.text,letterSpacing:1,fontFamily:"'Cormorant Garamond',serif"}}>LUXE</div>
         <div style={{width:50}}/>
       </div>
       <div style={{flex:1,...flex('column','center','center'),padding:'40px 24px'}}>
-        <div style={{width:80,height:80,borderRadius:20,background:`${accent}12`,...flex('row','center','center'),fontSize:40,marginBottom:20}}>{icon}</div>
-        <h1 style={{fontSize:24,fontWeight:800,color:C.text,margin:'0 0 4px',fontFamily:"'Cormorant Garamond',serif"}}>{title}</h1>
-        <p style={{fontSize:14,color:C.muted,margin:'0 0 32px'}}>{subtitle}</p>
+        <div style={{width:80,height:80,borderRadius:20,background:`${accent}12`,...flex('row','center','center'),fontSize:40,marginBottom:20,transition:'background .4s'}}>{icon}</div>
+        <h1 style={{fontSize:24,fontWeight:800,color:T.text,margin:'0 0 4px',fontFamily:"'Cormorant Garamond',serif"}}>{title}</h1>
+        <p style={{fontSize:14,color:T.muted,margin:'0 0 32px'}}>{subtitle}</p>
 
-        <div style={{...flex('row','center','center',0),width:'100%',marginBottom:28,background:C.card2,borderRadius:12,padding:4,border:`1px solid ${C.border}`}}>
-          <button onClick={()=>{setMode('signin');setTouched({});}} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signin'?accent:'transparent',color:mode==='signin'?C.white:C.muted,transition:'all .2s'}}>Sign In</button>
-          <button onClick={()=>{setMode('signup');setTouched({});}} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signup'?accent:'transparent',color:mode==='signup'?C.white:C.muted,transition:'all .2s'}}>Create Account</button>
+        <div style={{...flex('row','center','center',0),width:'100%',marginBottom:28,background:T.card2,borderRadius:12,padding:4,border:`1px solid ${T.border}`,transition:'all .4s'}}>
+          <button onClick={()=>{setMode('signin');setTouched({});}} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signin'?accent:'transparent',color:mode==='signin'?T.white:T.muted,transition:'all .2s'}}>Sign In</button>
+          <button onClick={()=>{setMode('signup');setTouched({});}} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signup'?accent:'transparent',color:mode==='signup'?T.white:T.muted,transition:'all .2s'}}>Create Account</button>
         </div>
 
         <div style={{width:'100%',maxWidth:360}}>
-          {mode==='signup'&&<div style={{marginBottom:16}}><label style={{fontSize:12,color:C.gray,fontWeight:600,marginBottom:6,display:'block'}}>Full Name</label><input value={name} onChange={e=>setName(e.target.value)} onBlur={()=>setTouched((t:any)=>({...t,name:true}))} placeholder="Enter your full name" style={{...inputStyle,borderColor:nameErr?C.red:C.border}}/>{nameErr&&<div style={errText}>{nameErr}</div>}</div>}
-          <div style={{marginBottom:16}}><label style={{fontSize:12,color:C.gray,fontWeight:600,marginBottom:6,display:'block'}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} onBlur={()=>setTouched((t:any)=>({...t,email:true}))} placeholder="you@example.com" style={{...inputStyle,borderColor:emailErr?C.red:C.border}}/>{emailErr&&<div style={errText}>{emailErr}</div>}</div>
-          <div style={{marginBottom:8}}><label style={{fontSize:12,color:C.gray,fontWeight:600,marginBottom:6,display:'block'}}>Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onBlur={()=>setTouched((t:any)=>({...t,password:true}))} placeholder="••••••••" style={{...inputStyle,borderColor:pwErr?C.red:C.border}}/>{pwErr&&<div style={errText}>{pwErr}</div>}</div>
-          {pwInfo&&<div style={{marginBottom:20}}><div style={{height:4,background:C.grayLighter,borderRadius:2,overflow:'hidden',marginBottom:4}}><div style={{height:'100%',width:`${pwInfo.pct}%`,background:pwInfo.color,borderRadius:2,transition:'all .3s'}}/></div><div style={{fontSize:11,color:pwInfo.color,fontWeight:600}}>{pwInfo.label}</div></div>}
+          {mode==='signup'&&<>
+            <div style={{marginBottom:16}}><label style={{fontSize:12,color:T.gray,fontWeight:600,marginBottom:6,display:'block'}}>Full Name</label><input value={name} onChange={e=>setName(e.target.value)} onBlur={()=>setTouched((t:any)=>({...t,name:true}))} placeholder="Enter your full name" style={{...inputStyle,background:T.card2,borderColor:nameErr?T.red:T.border,color:T.text}}/>{nameErr&&<div style={errText}>{nameErr}</div>}</div>
+            {/* GENDER SELECTOR */}
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:12,color:T.gray,fontWeight:600,marginBottom:8,display:'block'}}>I am</label>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                {([['female','👩','Female'],['male','👨','Male']] as const).map(([val,emoji,label])=>(
+                  <button key={val} onClick={()=>setGender(val)} style={{padding:'14px 12px',borderRadius:14,border:`2px solid ${gender===val?T.accent:T.border}`,background:gender===val?`${T.accent}10`:T.card,cursor:'pointer',transition:'all .3s',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                    <span style={{fontSize:20}}>{emoji}</span>
+                    <span style={{fontSize:14,fontWeight:gender===val?700:500,color:gender===val?T.accent:T.muted}}>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>}
+          <div style={{marginBottom:16}}><label style={{fontSize:12,color:T.gray,fontWeight:600,marginBottom:6,display:'block'}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} onBlur={()=>setTouched((t:any)=>({...t,email:true}))} placeholder="you@example.com" style={{...inputStyle,background:T.card2,borderColor:emailErr?T.red:T.border,color:T.text}}/>{emailErr&&<div style={errText}>{emailErr}</div>}</div>
+          <div style={{marginBottom:8}}><label style={{fontSize:12,color:T.gray,fontWeight:600,marginBottom:6,display:'block'}}>Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onBlur={()=>setTouched((t:any)=>({...t,password:true}))} placeholder="••••••••" style={{...inputStyle,background:T.card2,borderColor:pwErr?T.red:T.border,color:T.text}}/>{pwErr&&<div style={errText}>{pwErr}</div>}</div>
+          {pwInfo&&<div style={{marginBottom:20}}><div style={{height:4,background:T.grayLighter,borderRadius:2,overflow:'hidden',marginBottom:4}}><div style={{height:'100%',width:`${pwInfo.pct}%`,background:pwInfo.color,borderRadius:2,transition:'all .3s'}}/></div><div style={{fontSize:11,color:pwInfo.color,fontWeight:600}}>{pwInfo.label}</div></div>}
           {!pwInfo&&<div style={{height:16,marginBottom:8}}/>}
-          {authError&&<div style={{background:`${C.red}10`,border:`1px solid ${C.red}30`,borderRadius:10,padding:'10px 14px',marginBottom:16,fontSize:13,color:C.red}}>{authError}</div>}
-          <button onClick={handleSubmit} disabled={!isValid||loading} style={{...btn(isValid?`linear-gradient(135deg, ${accent}, ${isClient?C.rose:C.accentDark})`:C.grayLighter,isValid?C.white:C.muted),width:'100%',opacity:loading?0.7:1,fontSize:16,borderRadius:14}}>{loading?'Signing in...':mode==='signup'?'Create Account':'Sign In'}</button>
+          {authError&&<div style={{background:`${T.red}10`,border:`1px solid ${T.red}30`,borderRadius:10,padding:'10px 14px',marginBottom:16,fontSize:13,color:T.red}}>{authError}</div>}
+          <button onClick={handleSubmit} disabled={!isValid||loading} style={{...btn(isValid?`linear-gradient(135deg, ${T.accent}, ${T.secondary})`:T.grayLighter,isValid?T.white:T.muted),width:'100%',opacity:loading?0.7:1,fontSize:16,borderRadius:14}}>{loading?'Signing in...':mode==='signup'?'Create Account':'Sign In'}</button>
         </div>
       </div>
     </div>
@@ -236,9 +269,9 @@ const AuthScreen=({role,onBack,onLogin}:{role:string;onBack:()=>void;onLogin:(n:
 /* ════════════════════════════════════════ */
 /*             LANDING PAGE               */
 /* ════════════════════════════════════════ */
-const Landing=({onBook,onStylistPortal}:{onBook:()=>void;onStylistPortal:()=>void})=>{
+const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void;onStylistPortal:()=>void})=>{
   return(
-    <div style={{minHeight:'100dvh',background:C.bg}}>
+    <div style={{minHeight:'100dvh',background:T.bg,transition:'background .4s'}}>
       {/* Header */}
       <div style={{padding:'16px 24px',...flex('row','center','space-between')}}>
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:22,color:C.text,letterSpacing:2}}>LUXE</div>
@@ -250,7 +283,7 @@ const Landing=({onBook,onStylistPortal}:{onBook:()=>void;onStylistPortal:()=>voi
         <div style={{fontSize:56,marginBottom:16,animation:'float 3s ease-in-out infinite'}}>💎</div>
         <h1 style={{fontSize:32,fontWeight:300,color:C.text,margin:'0 0 8px',lineHeight:1.2,fontFamily:"'Cormorant Garamond',serif"}}>Premium Beauty,<br/><span style={{fontWeight:700}}>On Demand.</span></h1>
         <p style={{fontSize:15,color:C.gray,margin:'0 0 32px',lineHeight:1.6,maxWidth:320,marginLeft:'auto',marginRight:'auto'}}>Book elite stylists for hair, nails, lashes, makeup, skincare, massage, waxing & barber — at your door or their studio.</p>
-        <button onClick={onBook} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.rose})`),fontSize:17,padding:'16px 48px',boxShadow:`0 8px 30px ${C.accent}30`,borderRadius:16}}>Book a Stylist</button>
+        <button onClick={onBook} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.secondary})`),fontSize:17,padding:'16px 48px',boxShadow:`0 8px 30px ${C.accent}30`,borderRadius:16}}>Book a Stylist</button>
       </section>
 
       {/* Services Grid */}
@@ -289,11 +322,11 @@ const Landing=({onBook,onStylistPortal}:{onBook:()=>void;onStylistPortal:()=>voi
         <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Save more with a membership</p>
         {PLANS.map(p=>(
           <div key={p.name} style={{...cardStyle,marginBottom:16,border:`1px solid ${p.popular?C.accent:C.border}`,position:'relative',overflow:'hidden'}}>
-            {p.popular&&<div style={{position:'absolute',top:12,right:-30,background:`linear-gradient(135deg, ${C.accent}, ${C.rose})`,color:C.white,fontSize:10,fontWeight:800,padding:'4px 36px',transform:'rotate(45deg)',letterSpacing:1}}>POPULAR</div>}
+            {p.popular&&<div style={{position:'absolute',top:12,right:-30,background:`linear-gradient(135deg, ${C.accent}, ${C.secondary})`,color:C.white,fontSize:10,fontWeight:800,padding:'4px 36px',transform:'rotate(45deg)',letterSpacing:1}}>POPULAR</div>}
             <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:4}}>{p.name}</div>
             <div style={{...flex('row','baseline','flex-start',4),marginBottom:12}}><span style={{fontSize:32,fontWeight:900,color:p.popular?C.accent:C.text}}>{p.price}</span><span style={{fontSize:13,color:C.muted}}>{p.period}</span></div>
             {p.features.map(f=>(<div key={f} style={{...flex('row','center','flex-start',8),marginBottom:8}}><span style={{color:C.green,fontSize:14}}>✓</span><span style={{fontSize:13,color:C.gray}}>{f}</span></div>))}
-            <button onClick={onBook} style={{...btn(p.popular?`linear-gradient(135deg, ${C.accent}, ${C.rose})`:C.card2,p.popular?C.white:C.text,{width:'100%',marginTop:12,border:p.popular?'none':`1px solid ${C.border}`})}}>{p.price==='$0'?'Get Started Free':'Subscribe Now'}</button>
+            <button onClick={onBook} style={{...btn(p.popular?`linear-gradient(135deg, ${C.accent}, ${C.secondary})`:C.card2,p.popular?C.white:C.text,{width:'100%',marginTop:12,border:p.popular?'none':`1px solid ${C.border}`})}}>{p.price==='$0'?'Get Started Free':'Subscribe Now'}</button>
           </div>
         ))}
       </section>
@@ -310,7 +343,7 @@ const Landing=({onBook,onStylistPortal}:{onBook:()=>void;onStylistPortal:()=>voi
         <div style={{fontSize:48,marginBottom:16}}>✂️</div>
         <h2 style={{fontSize:24,fontWeight:700,color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Become a LUXE Stylist</h2>
         <p style={{fontSize:14,color:C.gray,margin:'0 0 24px',maxWidth:320,marginLeft:'auto',marginRight:'auto',lineHeight:1.6}}>Earn on your schedule doing what you love. Set your own rates, build your clientele, and get paid instantly.</p>
-        <button onClick={onStylistPortal} style={{...btn(C.rose),fontSize:16,padding:'14px 40px',borderRadius:16}}>Apply Now</button>
+        <button onClick={onStylistPortal} style={{...btn(C.secondary),fontSize:16,padding:'14px 40px',borderRadius:16}}>Apply Now</button>
       </section>
 
       {/* Stats */}
@@ -334,7 +367,7 @@ const Landing=({onBook,onStylistPortal}:{onBook:()=>void;onStylistPortal:()=>voi
 /* ════════════════════════════════════════ */
 /*            CLIENT APP                   */
 /* ════════════════════════════════════════ */
-const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:()=>void})=>{
+const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:string;userId:string;onBack:()=>void})=>{
   const[tab,setTab]=useState('home');
   const[selectedService,setSelectedService]=useState<any>(null);
   const[reqStep,setReqStep]=useState<string|null>(null);
@@ -375,7 +408,7 @@ const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:
 
         {serviceMode==='mobile'&&<div style={{width:'100%',padding:'16px 20px',background:`${C.accent}08`,borderRadius:14,marginBottom:24,...flex('row','center','flex-start',10)}}><span style={{fontSize:18}}>📍</span><div><div style={{fontSize:13,fontWeight:600,color:C.text}}>Your current location</div><div style={{fontSize:11,color:C.muted}}>GPS detected automatically</div></div></div>}
 
-        <button onClick={dispatchStylist} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.rose})`),width:'100%',fontSize:18,padding:'18px 32px',boxShadow:`0 8px 30px ${C.accent}25`,borderRadius:16}}>💎 Find My Stylist</button>
+        <button onClick={dispatchStylist} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.secondary})`),width:'100%',fontSize:18,padding:'18px 32px',boxShadow:`0 8px 30px ${C.accent}25`,borderRadius:16}}>💎 Find My Stylist</button>
       </div>
     </div>
   );
@@ -387,7 +420,7 @@ const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:
         <div style={{position:'absolute',inset:0,borderRadius:'50%',border:`2px solid ${C.accent}30`,animation:'pulse-ring 2s ease-out infinite'}}/>
         <div style={{position:'absolute',inset:20,borderRadius:'50%',border:`2px solid ${C.accent}50`,animation:'pulse-ring 2s ease-out infinite .5s'}}/>
         <div style={{position:'absolute',inset:40,borderRadius:'50%',border:`2px solid ${C.accent}80`,animation:'pulse-ring 2s ease-out infinite 1s'}}/>
-        <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:40,height:40,borderRadius:'50%',background:`linear-gradient(135deg, ${C.accent}, ${C.rose})`,boxShadow:`0 0 30px ${C.accent}40`,...flex('row','center','center')}}><span style={{fontSize:20}}>✨</span></div>
+        <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:40,height:40,borderRadius:'50%',background:`linear-gradient(135deg, ${C.accent}, ${C.secondary})`,boxShadow:`0 0 30px ${C.accent}40`,...flex('row','center','center')}}><span style={{fontSize:20}}>✨</span></div>
       </div>
       <div style={{fontSize:22,fontWeight:700,color:C.text,marginBottom:8,fontFamily:"'Cormorant Garamond',serif"}}>Finding Your Stylist...</div>
       <div style={{fontSize:14,color:C.gray,textAlign:'center'}}>Matching you with the closest verified professional</div>
@@ -403,7 +436,7 @@ const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:
       <div style={{...cardStyle,width:'100%',maxWidth:360}}>
         <div style={{...flex('row','center','flex-start',16),marginBottom:20}}>
           <div style={{width:64,height:64,borderRadius:16,background:`${C.accent}12`,...flex('row','center','center'),fontSize:32}}>✂️</div>
-          <div><div style={{fontSize:20,fontWeight:800,color:C.text}}>Jasmine R.</div><div style={{fontSize:13,color:C.yellow}}>★ 4.9 · 247 bookings</div><div style={{display:'inline-block',marginTop:4,padding:'2px 10px',borderRadius:100,background:`${C.rose}15`,color:C.rose,fontSize:10,fontWeight:700,letterSpacing:0.5}}>ELITE</div></div>
+          <div><div style={{fontSize:20,fontWeight:800,color:C.text}}>Jasmine R.</div><div style={{fontSize:13,color:C.yellow}}>★ 4.9 · 247 bookings</div><div style={{display:'inline-block',marginTop:4,padding:'2px 10px',borderRadius:100,background:`${C.secondary}15`,color:C.secondary,fontSize:10,fontWeight:700,letterSpacing:0.5}}>ELITE</div></div>
         </div>
         <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1px solid ${C.border}`}}><span style={{fontSize:13,color:C.gray}}>ETA</span><span style={{fontSize:16,fontWeight:700,color:C.text}}>~30 min</span></div>
         <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1px solid ${C.border}`}}><span style={{fontSize:13,color:C.gray}}>Service</span><span style={{fontSize:13,fontWeight:600,color:C.text}}>{selectedService?.name}</span></div>
@@ -454,7 +487,7 @@ const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:
             </button>
           );})}
         </div>
-        {selectedSvc&&<button onClick={()=>onDispatch(cat.services.find(s2=>s2.name===selectedSvc)||cat.services[0])} className="anim-pop" style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.rose})`,C.white,{width:'100%',marginTop:20,padding:'16px 28px',fontSize:15,letterSpacing:0.5,borderRadius:16,boxShadow:`0 8px 30px ${C.accent}25`})}}>💎 BOOK NOW</button>}
+        {selectedSvc&&<button onClick={()=>onDispatch(cat.services.find(s2=>s2.name===selectedSvc)||cat.services[0])} className="anim-pop" style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.secondary})`,C.white,{width:'100%',marginTop:20,padding:'16px 28px',fontSize:15,letterSpacing:0.5,borderRadius:16,boxShadow:`0 8px 30px ${C.accent}25`})}}>💎 BOOK NOW</button>}
       </div>
     );}
 
@@ -481,7 +514,7 @@ const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:
       {/* Header */}
       <div style={{padding:'16px 20px',...flex('row','center','space-between')}}>
         <div style={flex('row','center','flex-start',10)}>
-          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${C.accent}, ${C.rose})`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif"}}>LX</div>
+          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${C.accent}, ${C.secondary})`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif"}}>LX</div>
           <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>Hi, {userName||'there'} 💎</div><div style={{fontSize:11,color:C.muted}}>Free Member</div></div>
         </div>
         <button onClick={()=>setNotifOpen(!notifOpen)} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,width:40,height:40,cursor:'pointer',...flex('row','center','center'),position:'relative',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}><span style={{fontSize:18}}>🔔</span><div style={{position:'absolute',top:6,right:6,width:8,height:8,borderRadius:'50%',background:C.accent}}/></button>
@@ -501,7 +534,7 @@ const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:
 
           {/* Main CTA */}
           <div style={{...flex('column','center','center'),padding:'20px 20px 12px'}}>
-            <button onClick={()=>setTab('services')} style={{width:140,height:140,borderRadius:'50%',background:`linear-gradient(135deg, ${C.accent}, ${C.rose})`,border:'none',color:C.white,fontSize:15,fontWeight:900,cursor:'pointer',boxShadow:`0 8px 40px ${C.accent}35`,letterSpacing:0.5,animation:'luxe-pulse 2s ease-in-out infinite',fontFamily:"'Cormorant Garamond',serif"}}>💎<br/>LUXE<br/><span style={{fontSize:11,fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Book Now</span></button>
+            <button onClick={()=>setTab('services')} style={{width:140,height:140,borderRadius:'50%',background:`linear-gradient(135deg, ${C.accent}, ${C.secondary})`,border:'none',color:C.white,fontSize:15,fontWeight:900,cursor:'pointer',boxShadow:`0 8px 40px ${C.accent}35`,letterSpacing:0.5,animation:'luxe-pulse 2s ease-in-out infinite',fontFamily:"'Cormorant Garamond',serif"}}>💎<br/>LUXE<br/><span style={{fontSize:11,fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Book Now</span></button>
           </div>
 
           {/* Quick services */}
@@ -576,7 +609,7 @@ const ClientApp=({userName,userId,onBack}:{userName:string;userId:string;onBack:
 /* ════════════════════════════════════════ */
 /*         STYLIST DASHBOARD              */
 /* ════════════════════════════════════════ */
-const StylistDashboard=({userName,userId,onBack}:{userName:string;userId:string;onBack:()=>void})=>{
+const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:string;userId:string;onBack:()=>void})=>{
   const[tab,setTab]=useState('dashboard');
   const[onDuty,setOnDuty]=useState(false);
 
@@ -588,10 +621,10 @@ const StylistDashboard=({userName,userId,onBack}:{userName:string;userId:string;
       {/* Header */}
       <div style={{padding:'16px 20px',...flex('row','center','space-between')}}>
         <div style={flex('row','center','flex-start',10)}>
-          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${C.rose}, ${C.accent})`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif"}}>LX</div>
+          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${C.secondary}, ${C.accent})`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif"}}>LX</div>
           <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>Stylist Portal</div><div style={{fontSize:11,color:onDuty?C.green:C.muted}}>{onDuty?'🟢 On Duty':'⚫ Off Duty'}</div></div>
         </div>
-        <div style={{width:36,height:36,borderRadius:10,background:`${C.rose}12`,...flex('row','center','center'),fontSize:18}}>✂️</div>
+        <div style={{width:36,height:36,borderRadius:10,background:`${C.secondary}12`,...flex('row','center','center'),fontSize:18}}>✂️</div>
       </div>
 
       {tab==='dashboard'&&(
@@ -655,7 +688,7 @@ const StylistDashboard=({userName,userId,onBack}:{userName:string;userId:string;
 
       {tab==='profile'&&(
         <div className="anim-tab" style={{padding:20,...flex('column','center','center'),minHeight:'60vh'}}>
-          <div style={{width:80,height:80,borderRadius:20,background:`${C.rose}12`,...flex('row','center','center'),fontSize:36,marginBottom:16}}>✂️</div>
+          <div style={{width:80,height:80,borderRadius:20,background:`${C.secondary}12`,...flex('row','center','center'),fontSize:36,marginBottom:16}}>✂️</div>
           <div style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:4}}>{userName||'Stylist'}</div>
           <div style={{fontSize:13,color:C.green,marginBottom:24}}>★ 4.9 Rating · 312 Bookings</div>
           {['My Profile','Specialties & Licensing','Portfolio','Payout Settings','Studio Info','Help & Support'].map(item=>(
@@ -668,11 +701,11 @@ const StylistDashboard=({userName,userId,onBack}:{userName:string;userId:string;
       )}
 
       {/* Bottom Nav */}
-      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,0.88)',backdropFilter:'blur(20px) saturate(180%)',WebkitBackdropFilter:'blur(20px) saturate(180%)',borderTop:`1px solid ${C.rose}15`,padding:'8px 0 env(safe-area-inset-bottom,8px)',...flex('row','center','space-around'),zIndex:40}}>
+      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,0.88)',backdropFilter:'blur(20px) saturate(180%)',WebkitBackdropFilter:'blur(20px) saturate(180%)',borderTop:`1px solid ${C.secondary}15`,padding:'8px 0 env(safe-area-inset-bottom,8px)',...flex('row','center','space-around'),zIndex:40}}>
         {([['dashboard','📊','Dashboard'],['jobs','📋','Bookings'],['earnings','💰','Earnings'],['profile','👤','Profile']] as const).map(([id,ic,label])=>(
           <button key={id} onClick={()=>setTab(id)} style={{background:'none',border:'none',cursor:'pointer',...flex('column','center','center',2),padding:'6px 12px'}}>
             <span style={{fontSize:20}}>{ic}</span>
-            <span style={{fontSize:10,color:tab===id?C.rose:C.muted,fontWeight:tab===id?700:500}}>{label}</span>
+            <span style={{fontSize:10,color:tab===id?C.secondary:C.muted,fontWeight:tab===id?700:500}}>{label}</span>
           </button>
         ))}
       </div>
