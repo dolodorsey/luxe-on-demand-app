@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=DM+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --luxe-bg: #FAF7F4;
+  --luxe-card: #FFFFFF;
+  --luxe-primary: #1A1A2E;
+  --luxe-accent: #C8A96E;
+  --luxe-accent-dark: #A68B4B;
+  --luxe-rose: #B5505A;
+  --luxe-blush: #E8C4C4;
+  --luxe-cream: #F5F0E8;
+  --luxe-charcoal: #2D2D3A;
+  --luxe-muted: #8B8B9E;
+  --luxe-border: #E8E4DF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--luxe-bg);
+  color: var(--luxe-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Bottom nav safe area */
+.pb-safe {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Glassmorphic bottom bar */
+.glass-bar {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(200, 169, 110, 0.15);
+}
+
+/* Category card shimmer */
+.category-card {
+  background: white;
+  border-radius: 20px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(232, 228, 223, 0.6);
+}
+
+.category-card:active {
+  transform: scale(0.97);
+}
+
+/* Accent gradient for hero */
+.luxe-gradient {
+  background: linear-gradient(135deg, #C8A96E 0%, #B5505A 50%, #E8C4C4 100%);
+}
+
+.luxe-gradient-soft {
+  background: linear-gradient(135deg, rgba(200,169,110,0.12) 0%, rgba(181,80,90,0.08) 50%, rgba(232,196,196,0.12) 100%);
+}
+
+/* Service badge */
+.service-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Scrollbar hide for horizontal scroll */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Status pill colors */
+.status-requested { background: #FFF3CD; color: #856404; }
+.status-accepted { background: #D4EDDA; color: #155724; }
+.status-in_progress { background: #CCE5FF; color: #004085; }
+.status-completed { background: #D4EDDA; color: #155724; }
+.status-canceled { background: #F8D7DA; color: #721C24; }
+
+/* Skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #F0EDE8 25%, #FAF7F4 50%, #F0EDE8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
