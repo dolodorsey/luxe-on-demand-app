@@ -7,6 +7,12 @@ const tap=async(_style='Medium')=>{try{const mod=await(Function('return import("
 
 /* ─── LUXE Dual Theme System ─── */
 /* Female: Gold/Rose luxury | Male: Blue/Steel masculine */
+/* GOLD TRIM: Universal premium signature — stays gold on both themes */
+const GOLD='#C8A96E';
+const GOLD_DARK='#A68B4B';
+const GOLD_LIGHT='#D4BC8A';
+const GOLD_GLOW='rgba(200,169,110,0.25)';
+
 const THEME_FEMALE={
   bg:'#FAF7F4',card:'#FFFFFF',card2:'#F5F0E8',primary:'#1A1A2E',accent:'#C8A96E',accentDark:'#A68B4B',
   secondary:'#B5505A',secondaryLight:'#E8C4C4',green:'#3D9970',greenDark:'#2D7A56',
@@ -16,6 +22,7 @@ const THEME_FEMALE={
   gradient1:'#C8A96E',gradient2:'#B5505A',
   heroIcon:'💎',heroLabel:'LUXE',ctaLabel:'Book a Stylist',
   navAccent:'#C8A96E',stylistAccent:'#B5505A',
+  gold:GOLD,goldDark:GOLD_DARK,goldLight:GOLD_LIGHT,goldGlow:GOLD_GLOW,
 };
 const THEME_MALE={
   bg:'#F0F4F8',card:'#FFFFFF',card2:'#E8EDF3',primary:'#1A2744',accent:'#2B6CB0',accentDark:'#1E4D8C',
@@ -26,6 +33,7 @@ const THEME_MALE={
   gradient1:'#2B6CB0',gradient2:'#1A365D',
   heroIcon:'🔵',heroLabel:'LUXE',ctaLabel:'Book Now',
   navAccent:'#2B6CB0',stylistAccent:'#3182CE',
+  gold:GOLD,goldDark:GOLD_DARK,goldLight:GOLD_LIGHT,goldGlow:GOLD_GLOW,
 };
 // Default palette — will be overridden by theme context
 let C=THEME_FEMALE;
@@ -272,23 +280,23 @@ const AuthScreen=({T,role,gender,setGender,onBack,onLogin}:{T:typeof THEME_FEMAL
 const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void;onStylistPortal:()=>void})=>{
   return(
     <div style={{minHeight:'100dvh',background:T.bg,transition:'background .4s'}}>
-      {/* Header */}
-      <div style={{padding:'16px 24px',...flex('row','center','space-between')}}>
-        <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:22,color:C.text,letterSpacing:2}}>LUXE</div>
-        <button onClick={onBook} style={{...btn(C.accent,C.white,{padding:'10px 24px',fontSize:13,borderRadius:12})}}>Get Started</button>
+      {/* Header with gold trim bottom */}
+      <div style={{padding:'16px 24px',...flex('row','center','space-between'),borderBottom:`1px solid ${GOLD}20`}}>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:22,color:GOLD,letterSpacing:3,textShadow:`0 0 20px ${GOLD}15`}}>LUXE</div>
+        <button onClick={onBook} style={{...btn(GOLD,C.white,{padding:'10px 24px',fontSize:13,borderRadius:12,boxShadow:`0 2px 8px ${GOLD_GLOW}`})}}>Get Started</button>
       </div>
 
       {/* Hero */}
       <section style={{padding:'48px 24px 40px',textAlign:'center'}}>
         <div style={{fontSize:56,marginBottom:16,animation:'float 3s ease-in-out infinite'}}>💎</div>
-        <h1 style={{fontSize:32,fontWeight:300,color:C.text,margin:'0 0 8px',lineHeight:1.2,fontFamily:"'Cormorant Garamond',serif"}}>Premium Beauty,<br/><span style={{fontWeight:700}}>On Demand.</span></h1>
+        <h1 style={{fontSize:32,fontWeight:300,color:C.text,margin:'0 0 8px',lineHeight:1.2,fontFamily:"'Cormorant Garamond',serif"}}>Premium Beauty,<br/><span style={{fontWeight:700,background:`linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>On Demand.</span></h1>
         <p style={{fontSize:15,color:C.gray,margin:'0 0 32px',lineHeight:1.6,maxWidth:320,marginLeft:'auto',marginRight:'auto'}}>Book elite stylists for hair, nails, lashes, makeup, skincare, massage, waxing & barber — at your door or their studio.</p>
-        <button onClick={onBook} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.secondary})`),fontSize:17,padding:'16px 48px',boxShadow:`0 8px 30px ${C.accent}30`,borderRadius:16}}>Book a Stylist</button>
+        <button onClick={onBook} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.secondary})`),fontSize:17,padding:'16px 48px',boxShadow:`0 8px 30px ${C.accent}30`,borderRadius:16,border:`1px solid ${GOLD}30`}}>Book a Stylist</button>
       </section>
 
-      {/* Services Grid */}
-      <section style={{padding:'40px 24px',borderTop:`1px solid ${C.border}`}}>
-        <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>44 Services, 8 Categories</h2>
+      {/* Services Grid — gold trim divider */}
+      <section style={{padding:'40px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
+        <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>292 Services, 13 Categories</h2>
         <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Everything beauty in one place</p>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
           {SERVICE_TAXONOMY.map((cat,i)=>(
@@ -302,7 +310,7 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
       </section>
 
       {/* Trust & Safety */}
-      <section style={{padding:'48px 24px',borderTop:`1px solid ${C.border}`}}>
+      <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
         <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Trust & Safety Built In</h2>
         <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Every stylist is licensed, verified & background checked</p>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
@@ -317,7 +325,7 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
       </section>
 
       {/* Plans */}
-      <section style={{padding:'48px 24px',borderTop:`1px solid ${C.border}`}}>
+      <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
         <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Choose Your Plan</h2>
         <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Save more with a membership</p>
         {PLANS.map(p=>(
@@ -332,14 +340,14 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
       </section>
 
       {/* Testimonials */}
-      <section style={{padding:'48px 24px',borderTop:`1px solid ${C.border}`}}>
+      <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
         <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>What People Say</h2>
         <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Real reviews from real clients</p>
         {REVIEWS.map((r,i)=>(<div key={i} style={{...cardStyle,marginBottom:16}}><div style={{marginBottom:8,color:C.yellow}}>{'★'.repeat(r.stars)}</div><p style={{fontSize:14,color:C.gray,lineHeight:1.6,margin:'0 0 12px',fontStyle:'italic'}}>"{r.text}"</p><div style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</div><div style={{fontSize:11,color:C.muted}}>{r.plan}</div></div>))}
       </section>
 
       {/* Become a Stylist */}
-      <section style={{padding:'48px 24px',borderTop:`1px solid ${C.border}`,textAlign:'center',background:`radial-gradient(ellipse at 50% 100%,${C.accent}08 0%,transparent 60%)`}}>
+      <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`,textAlign:'center',background:`radial-gradient(ellipse at 50% 100%,${C.accent}08 0%,transparent 60%)`}}>
         <div style={{fontSize:48,marginBottom:16}}>✂️</div>
         <h2 style={{fontSize:24,fontWeight:700,color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Become a LUXE Stylist</h2>
         <p style={{fontSize:14,color:C.gray,margin:'0 0 24px',maxWidth:320,marginLeft:'auto',marginRight:'auto',lineHeight:1.6}}>Earn on your schedule doing what you love. Set your own rates, build your clientele, and get paid instantly.</p>
@@ -347,7 +355,7 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
       </section>
 
       {/* Stats */}
-      <section style={{padding:'40px 24px',borderTop:`1px solid ${C.border}`}}>
+      <section style={{padding:'40px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
           {[['44+','Services'],['4.9','App Rating'],['30 min','Avg Arrival'],['100%','Licensed']].map(([val,label])=>(
             <div key={label} style={{textAlign:'center'}}><div style={{fontSize:24,fontWeight:900,color:C.text}}>{val}</div><div style={{fontSize:11,color:C.muted}}>{label}</div></div>
@@ -355,9 +363,10 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
         </div>
       </section>
 
-      <footer style={{padding:'32px 24px',borderTop:`1px solid ${C.border}`,textAlign:'center'}}>
-        <div style={{fontWeight:700,fontSize:18,color:C.text,marginBottom:4,fontFamily:"'Cormorant Garamond',serif",letterSpacing:2}}>LUXE ON DEMAND</div>
+      <footer style={{padding:'32px 24px',borderTop:`1.5px solid ${GOLD}25`,textAlign:'center'}}>
+        <div style={{fontWeight:700,fontSize:18,color:GOLD,marginBottom:4,fontFamily:"'Cormorant Garamond',serif",letterSpacing:3}}>LUXE ON DEMAND</div>
         <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Premium Beauty. Your Schedule.</div>
+        <div style={{width:40,height:1,background:`linear-gradient(90deg, transparent, ${GOLD}, transparent)`,margin:'0 auto 12px'}}/>
         <div style={{fontSize:11,color:C.grayLight}}>© 2026 LUXE On Demand. All rights reserved.</div>
       </footer>
     </div>
@@ -438,10 +447,10 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
           <div style={{width:64,height:64,borderRadius:16,background:`${C.accent}12`,...flex('row','center','center'),fontSize:32}}>✂️</div>
           <div><div style={{fontSize:20,fontWeight:800,color:C.text}}>Jasmine R.</div><div style={{fontSize:13,color:C.yellow}}>★ 4.9 · 247 bookings</div><div style={{display:'inline-block',marginTop:4,padding:'2px 10px',borderRadius:100,background:`${C.secondary}15`,color:C.secondary,fontSize:10,fontWeight:700,letterSpacing:0.5}}>ELITE</div></div>
         </div>
-        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1px solid ${C.border}`}}><span style={{fontSize:13,color:C.gray}}>ETA</span><span style={{fontSize:16,fontWeight:700,color:C.text}}>~30 min</span></div>
-        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1px solid ${C.border}`}}><span style={{fontSize:13,color:C.gray}}>Service</span><span style={{fontSize:13,fontWeight:600,color:C.text}}>{selectedService?.name}</span></div>
-        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1px solid ${C.border}`}}><span style={{fontSize:13,color:C.gray}}>Mode</span><span style={{fontSize:13,fontWeight:600,color:serviceMode==='mobile'?C.green:C.accent}}>{serviceMode==='mobile'?'📍 Coming to you':'🏠 At studio'}</span></div>
-        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1px solid ${C.border}`}}><span style={{fontSize:13,color:C.gray}}>Price</span><span style={{fontSize:16,fontWeight:800,color:C.accent}}>${selectedService?.price}</span></div>
+        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>ETA</span><span style={{fontSize:16,fontWeight:700,color:C.text}}>~30 min</span></div>
+        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>Service</span><span style={{fontSize:13,fontWeight:600,color:C.text}}>{selectedService?.name}</span></div>
+        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>Mode</span><span style={{fontSize:13,fontWeight:600,color:serviceMode==='mobile'?C.green:C.accent}}>{serviceMode==='mobile'?'📍 Coming to you':'🏠 At studio'}</span></div>
+        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>Price</span><span style={{fontSize:16,fontWeight:800,color:C.accent}}>${selectedService?.price}</span></div>
       </div>
       <button onClick={startTracking} style={{...btn(C.green),width:'100%',maxWidth:360,fontSize:16,marginTop:24,borderRadius:16}}>Track My Stylist →</button>
     </div>
@@ -510,14 +519,14 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
 
   /* ── Main Client Tabs ── */
   return(
-    <div style={{minHeight:'100dvh',background:C.bg,paddingBottom:80}}>
-      {/* Header */}
-      <div style={{padding:'16px 20px',...flex('row','center','space-between')}}>
+    <div style={{minHeight:'100dvh',background:C.bg,paddingBottom:80,transition:'background .4s'}}>
+      {/* Header — GOLD TRIM */}
+      <div style={{padding:'16px 20px',...flex('row','center','space-between'),borderBottom:`1px solid ${GOLD}18`}}>
         <div style={flex('row','center','flex-start',10)}>
-          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${C.accent}, ${C.secondary})`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif"}}>LX</div>
-          <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>Hi, {userName||'there'} 💎</div><div style={{fontSize:11,color:C.muted}}>Free Member</div></div>
+          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${GOLD}, ${GOLD_DARK})`,border:`1px solid ${GOLD}60`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif",boxShadow:`0 2px 8px ${GOLD_GLOW}`}}>LX</div>
+          <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>Hi, {userName||'there'} 💎</div><div style={{fontSize:11,color:GOLD}}>Free Member</div></div>
         </div>
-        <button onClick={()=>setNotifOpen(!notifOpen)} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,width:40,height:40,cursor:'pointer',...flex('row','center','center'),position:'relative',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}><span style={{fontSize:18}}>🔔</span><div style={{position:'absolute',top:6,right:6,width:8,height:8,borderRadius:'50%',background:C.accent}}/></button>
+        <button onClick={()=>setNotifOpen(!notifOpen)} style={{background:C.card,border:`1px solid ${GOLD}25`,borderRadius:12,width:40,height:40,cursor:'pointer',...flex('row','center','center'),position:'relative',boxShadow:`0 1px 6px ${GOLD_GLOW}`}}><span style={{fontSize:18}}>🔔</span><div style={{position:'absolute',top:6,right:6,width:8,height:8,borderRadius:'50%',background:GOLD}}/></button>
       </div>
 
       {notifOpen&&<div style={{margin:'0 20px 16px',padding:16,background:C.card,borderRadius:14,border:`1px solid ${C.border}`,boxShadow:'0 4px 12px rgba(0,0,0,0.06)'}}><div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:12}}>Notifications</div>{['💎 Welcome to LUXE! Your account is ready.','⭐ Upgrade to LUXE+ for priority matching.'].map((n,i)=>(<div key={i} style={{padding:'10px 0',borderBottom:i===0?`1px solid ${C.border}`:'none',fontSize:13,color:C.gray}}>{n}</div>))}</div>}
@@ -593,8 +602,8 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
         </div>
       )}
 
-      {/* Bottom Nav */}
-      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,0.88)',backdropFilter:'blur(20px) saturate(180%)',WebkitBackdropFilter:'blur(20px) saturate(180%)',borderTop:`1px solid ${C.accent}15`,padding:'8px 0 env(safe-area-inset-bottom,8px)',...flex('row','center','space-around'),zIndex:40}}>
+      {/* Bottom Nav — GOLD TRIM */}
+      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px) saturate(180%)',WebkitBackdropFilter:'blur(20px) saturate(180%)',borderTop:`1.5px solid ${GOLD}35`,padding:'8px 0 env(safe-area-inset-bottom,8px)',...flex('row','center','space-around'),zIndex:40,boxShadow:`0 -2px 12px ${GOLD_GLOW}`}}>
         {([['home','🏠','Home'],['services','✨','Services'],['activity','📋','Activity'],['profile','👤','Profile']] as const).map(([id,ic,label])=>(
           <button key={id} onClick={()=>setTab(id)} style={{background:'none',border:'none',cursor:'pointer',...flex('column','center','center',2),padding:'6px 12px'}}>
             <span style={{fontSize:20}}>{ic}</span>
@@ -617,14 +626,14 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
   const weekEarnings=STYLIST_HISTORY.reduce((s,m)=>s+m.earned,0);
 
   return(
-    <div style={{minHeight:'100dvh',background:C.bg,paddingBottom:80}}>
-      {/* Header */}
-      <div style={{padding:'16px 20px',...flex('row','center','space-between')}}>
+    <div style={{minHeight:'100dvh',background:C.bg,paddingBottom:80,transition:'background .4s'}}>
+      {/* Header — GOLD TRIM */}
+      <div style={{padding:'16px 20px',...flex('row','center','space-between'),borderBottom:`1px solid ${GOLD}18`}}>
         <div style={flex('row','center','flex-start',10)}>
-          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${C.secondary}, ${C.accent})`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif"}}>LX</div>
+          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${GOLD}, ${GOLD_DARK})`,border:`1px solid ${GOLD}60`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif",boxShadow:`0 2px 8px ${GOLD_GLOW}`}}>LX</div>
           <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>Stylist Portal</div><div style={{fontSize:11,color:onDuty?C.green:C.muted}}>{onDuty?'🟢 On Duty':'⚫ Off Duty'}</div></div>
         </div>
-        <div style={{width:36,height:36,borderRadius:10,background:`${C.secondary}12`,...flex('row','center','center'),fontSize:18}}>✂️</div>
+        <div style={{width:36,height:36,borderRadius:10,background:`${GOLD}12`,border:`1px solid ${GOLD}25`,...flex('row','center','center'),fontSize:18}}>✂️</div>
       </div>
 
       {tab==='dashboard'&&(
@@ -700,8 +709,8 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
         </div>
       )}
 
-      {/* Bottom Nav */}
-      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,0.88)',backdropFilter:'blur(20px) saturate(180%)',WebkitBackdropFilter:'blur(20px) saturate(180%)',borderTop:`1px solid ${C.secondary}15`,padding:'8px 0 env(safe-area-inset-bottom,8px)',...flex('row','center','space-around'),zIndex:40}}>
+      {/* Bottom Nav — GOLD TRIM */}
+      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px) saturate(180%)',WebkitBackdropFilter:'blur(20px) saturate(180%)',borderTop:`1.5px solid ${GOLD}35`,padding:'8px 0 env(safe-area-inset-bottom,8px)',...flex('row','center','space-around'),zIndex:40,boxShadow:`0 -2px 12px ${GOLD_GLOW}`}}>
         {([['dashboard','📊','Dashboard'],['jobs','📋','Bookings'],['earnings','💰','Earnings'],['profile','👤','Profile']] as const).map(([id,ic,label])=>(
           <button key={id} onClick={()=>setTab(id)} style={{background:'none',border:'none',cursor:'pointer',...flex('column','center','center',2),padding:'6px 12px'}}>
             <span style={{fontSize:20}}>{ic}</span>

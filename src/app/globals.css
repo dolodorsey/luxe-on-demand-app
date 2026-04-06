@@ -43,20 +43,60 @@ body {
   padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Glassmorphic bottom bar */
+/* Glassmorphic bottom bar with GOLD TRIM */
 .glass-bar {
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-top: 1px solid rgba(200, 169, 110, 0.15);
+  border-top: 1.5px solid #C8A96E40;
 }
 
-/* Category card shimmer */
+/* ═══ GOLD TRIM SYSTEM ═══ */
+/* Universal gold signature that stays across both themes */
+.gold-trim {
+  border: 1px solid rgba(200, 169, 110, 0.2);
+  box-shadow: 0 0 0 0.5px rgba(200, 169, 110, 0.08);
+}
+
+.gold-trim-top {
+  border-top: 1.5px solid rgba(200, 169, 110, 0.3);
+}
+
+.gold-trim-bottom {
+  border-bottom: 1.5px solid rgba(200, 169, 110, 0.3);
+}
+
+.gold-trim-left {
+  border-left: 2px solid #C8A96E;
+}
+
+.gold-glow {
+  box-shadow: 0 2px 12px rgba(200, 169, 110, 0.15), 0 0 0 0.5px rgba(200, 169, 110, 0.1);
+}
+
+.gold-text {
+  color: #C8A96E;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #C8A96E, #D4BC8A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Category card with gold trim on hover */
 .category-card {
   background: white;
   border-radius: 20px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(232, 228, 223, 0.6);
+}
+
+.category-card:hover,
+.category-card:active {
+  border-color: rgba(200, 169, 110, 0.4);
+  box-shadow: 0 4px 16px rgba(200, 169, 110, 0.12);
 }
 
 .category-card:active {
