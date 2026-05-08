@@ -1,0 +1,26 @@
+{
+  "appId": "com.luxeondemand.app",
+  "appName": "Luxe On Demand",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "backgroundColor": "#0A0A0A",
+    "contentInset": "always",
+    "preferredContentMode": "mobile",
+    "scheme": "LuxeOnDemand"
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0A0A0A"
+    },
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#0A0A0A",
+      "showSpinner": false,
+      "splashImmersive": true
+    }
+  }
+}
