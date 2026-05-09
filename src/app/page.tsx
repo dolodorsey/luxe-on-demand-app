@@ -109,16 +109,10 @@ const SERVICE_TAXONOMY=[
   ]},
 ];
 
-const PLANS=[
-  {name:'Free',price:'$0',period:'forever',features:['Pay-as-you-go pricing','Standard matching','Basic notifications','Email support'],popular:false},
-  {name:'LUXE+',price:'$14.99',period:'/month',features:['15% off all services','Priority matching','Before & after photos','24/7 support','1 free eyebrow wax/month'],popular:true},
-  {name:'LUXE VIP',price:'$29.99',period:'/month',features:['25% off all services','VIP priority matching','Dedicated stylist matching','24/7 concierge line','2 free services/month','Family coverage (up to 4)','Personal beauty consultant'],popular:false},
-];
-
 const REVIEWS=[
-  {text:'My braids came out absolutely perfect. She arrived in 30 minutes and my hair has never looked this good. LUXE is unmatched.',name:'Jasmine R.',plan:'LUXE+ Member',stars:5},
-  {text:'I use LUXE for everything — nails, lashes, facials. One app for all my beauty needs. The stylists are elite.',name:'Destiny K.',plan:'VIP Member',stars:5},
-  {text:'Got a fade at my apartment before a date. The barber was professional, clean, and fast. This app is a game-changer.',name:'Marcus T.',plan:'LUXE+',stars:5},
+  {text:'My braids came out absolutely perfect. She arrived in 30 minutes and my hair has never looked this good. LUXE is unmatched.',name:'Jasmine R.',plan:'Verified Client',stars:5},
+  {text:'I use LUXE for everything — nails, lashes, facials. One app for all my beauty needs. The stylists are elite.',name:'Destiny K.',plan:'Active Client',stars:5},
+  {text:'Got a fade at my apartment before a date. The barber was professional, clean, and fast. This app is a game-changer.',name:'Marcus T.',plan:'Repeat Client',stars:5},
 ];
 
 const STYLIST_HISTORY=[
@@ -324,21 +318,6 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
         </div>
       </section>
 
-      {/* Plans */}
-      <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
-        <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Choose Your Plan</h2>
-        <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Save more with a membership</p>
-        {PLANS.map(p=>(
-          <div key={p.name} style={{...cardStyle,marginBottom:16,border:`1px solid ${p.popular?C.accent:C.border}`,position:'relative',overflow:'hidden'}}>
-            {p.popular&&<div style={{position:'absolute',top:12,right:-30,background:`linear-gradient(135deg, ${C.accent}, ${C.secondary})`,color:C.white,fontSize:10,fontWeight:800,padding:'4px 36px',transform:'rotate(45deg)',letterSpacing:1}}>POPULAR</div>}
-            <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:4}}>{p.name}</div>
-            <div style={{...flex('row','baseline','flex-start',4),marginBottom:12}}><span style={{fontSize:32,fontWeight:900,color:p.popular?C.accent:C.text}}>{p.price}</span><span style={{fontSize:13,color:C.muted}}>{p.period}</span></div>
-            {p.features.map(f=>(<div key={f} style={{...flex('row','center','flex-start',8),marginBottom:8}}><span style={{color:C.green,fontSize:14}}>✓</span><span style={{fontSize:13,color:C.gray}}>{f}</span></div>))}
-            <button onClick={onBook} style={{...btn(p.popular?`linear-gradient(135deg, ${C.accent}, ${C.secondary})`:C.card2,p.popular?C.white:C.text,{width:'100%',marginTop:12,border:p.popular?'none':`1px solid ${C.border}`})}}>{p.price==='$0'?'Get Started Free':'Subscribe Now'}</button>
-          </div>
-        ))}
-      </section>
-
       {/* Testimonials */}
       <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
         <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>What People Say</h2>
@@ -524,12 +503,12 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
       <div style={{padding:'16px 20px',...flex('row','center','space-between'),borderBottom:`1px solid ${GOLD}18`}}>
         <div style={flex('row','center','flex-start',10)}>
           <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg, ${GOLD}, ${GOLD_DARK})`,border:`1px solid ${GOLD}60`,...flex('row','center','center'),fontWeight:900,fontSize:8,color:C.white,letterSpacing:0.3,fontFamily:"'Cormorant Garamond',serif",boxShadow:`0 2px 8px ${GOLD_GLOW}`}}>LX</div>
-          <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>Hi, {userName||'there'} 💎</div><div style={{fontSize:11,color:GOLD}}>Free Member</div></div>
+          <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>Hi, {userName||'there'} 💎</div><div style={{fontSize:11,color:GOLD}}>Client</div></div>
         </div>
         <button onClick={()=>setNotifOpen(!notifOpen)} style={{background:C.card,border:`1px solid ${GOLD}25`,borderRadius:12,width:40,height:40,cursor:'pointer',...flex('row','center','center'),position:'relative',boxShadow:`0 1px 6px ${GOLD_GLOW}`}}><span style={{fontSize:18}}>🔔</span><div style={{position:'absolute',top:6,right:6,width:8,height:8,borderRadius:'50%',background:GOLD}}/></button>
       </div>
 
-      {notifOpen&&<div style={{margin:'0 20px 16px',padding:16,background:C.card,borderRadius:14,border:`1px solid ${C.border}`,boxShadow:'0 4px 12px rgba(0,0,0,0.06)'}}><div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:12}}>Notifications</div>{['💎 Welcome to LUXE! Your account is ready.','⭐ Upgrade to LUXE+ for priority matching.'].map((n,i)=>(<div key={i} style={{padding:'10px 0',borderBottom:i===0?`1px solid ${C.border}`:'none',fontSize:13,color:C.gray}}>{n}</div>))}</div>}
+      {notifOpen&&<div style={{margin:'0 20px 16px',padding:16,background:C.card,borderRadius:14,border:`1px solid ${C.border}`,boxShadow:'0 4px 12px rgba(0,0,0,0.06)'}}><div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:12}}>Notifications</div>{['💎 Welcome to LUXE! Your account is ready.','📍 Live booking updates are enabled for your appointments.'].map((n,i)=>(<div key={i} style={{padding:'10px 0',borderBottom:i===0?`1px solid ${C.border}`:'none',fontSize:13,color:C.gray}}>{n}</div>))}</div>}
 
       {tab==='home'&&(
         <div className="anim-tab">
