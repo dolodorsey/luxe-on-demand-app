@@ -115,6 +115,8 @@ const REVIEWS=[
   {text:'Got a fade at my apartment before a date. The barber was professional, clean, and fast. This app is a game-changer.',name:'Marcus T.',plan:'Repeat Client',stars:5},
 ];
 
+const LUXE_STRIPE_PAYMENT_URL='https://buy.stripe.com/6oU28sb99gZy0TeeyddUY05';
+
 const STYLIST_HISTORY=[
   {client:'Jasmine R.',service:'Braids',earned:150,time:'2:15 PM',rating:5},
   {client:'Destiny K.',service:'Gel Nails',earned:55,time:'11:30 AM',rating:5},
@@ -135,6 +137,15 @@ const passwordStrength=(p:string)=>{
   let s=0;if(/[a-z]/.test(p))s++;if(/[A-Z]/.test(p))s++;if(/[0-9]/.test(p))s++;if(/[^a-zA-Z0-9]/.test(p))s++;
   if(s<=1)return{label:'Weak',color:C.orange,pct:40};if(s===2)return{label:'Fair',color:C.yellow,pct:60};
   if(s===3)return{label:'Good',color:C.accent,pct:80};return{label:'Strong',color:C.green,pct:100};
+};
+
+const openPaymentUrl=async(url:string)=>{
+  try{
+    const mod=await(Function('return import("@capacitor/browser")')());
+    await mod.Browser.open({url});
+  }catch{
+    window.open(url,'_blank');
+  }
 };
 
 /* ════════════════════════════════════════ */
@@ -545,7 +556,7 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
             {CLIENT_HISTORY.length===0?<div style={{...cardStyle,textAlign:'center' as any,padding:'24px 20px'}}><div style={{fontSize:28,marginBottom:8}}>✨</div><div style={{fontSize:13,color:C.muted}}>No bookings yet. Book your first service!</div></div>:
             CLIENT_HISTORY.map((h,i)=>(
               <div key={i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:10}}>
-                <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{h.service}</div><div style={{fontSize:12,color:C.muted}}>{h.stylist} · {h.date}</div></div>
+                <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{h.service}</div><div style={{fontSize:12,color:C.muted}}>{h.stylist} · {h.date}</div><button onClick={()=>openPaymentUrl(LUXE_STRIPE_PAYMENT_URL)} style={{...btn(C.card2,C.accent,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`})}}>Pay with Card</button></div>
                 <div style={{textAlign:'right' as any}}><div style={{fontSize:16,fontWeight:800,color:C.accent}}>${h.cost}</div><div style={{fontSize:10,fontWeight:600,color:h.status==='Completed'?C.green:C.orange}}>{h.status}</div></div>
               </div>
             ))}
@@ -560,7 +571,7 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
           <h2 style={{fontSize:20,fontWeight:800,color:C.text,marginBottom:16}}>Booking History</h2>
           {CLIENT_HISTORY.map((h,i)=>(
             <div key={i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:12}}>
-              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{h.service}</div><div style={{fontSize:12,color:C.muted}}>{h.stylist} · {h.date}</div></div>
+              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{h.service}</div><div style={{fontSize:12,color:C.muted}}>{h.stylist} · {h.date}</div><button onClick={()=>openPaymentUrl(LUXE_STRIPE_PAYMENT_URL)} style={{...btn(C.card2,C.accent,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`})}}>Pay with Card</button></div>
               <div style={{textAlign:'right' as any}}><div style={{fontSize:18,fontWeight:800,color:C.accent}}>${h.cost}</div><div style={{fontSize:10,fontWeight:600,color:C.green}}>{h.status}</div></div>
             </div>
           ))}
