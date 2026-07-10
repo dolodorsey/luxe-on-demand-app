@@ -14,6 +14,6 @@ test('health contract identifies the app and authority', () => {
 test('handoff protects appointment and qualification rules', () => {
   const handoff = read('docs/HANDOFF.md')
   assert.match(handoff, /lod_appointments/)
-  assert.match(handoff, /double booking/i)
+  assert.match(handoff, /double[- ]booking/i)
   assert.match(handoff, /licensing|certification/i)
 })
