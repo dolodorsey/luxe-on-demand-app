@@ -29,7 +29,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="pb-safe">{children}</body>
+      <body>
+        <div className="app-shell pb-safe">{children}</div>
+      </body>
     </html>
   );
 }
