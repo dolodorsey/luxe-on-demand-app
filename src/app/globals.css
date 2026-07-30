@@ -25,17 +25,48 @@
 }
 
 html {
+  min-height: 100%;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #17131c;
 }
 
 body {
   font-family: 'DM Sans', sans-serif;
-  background-color: var(--luxe-bg);
+  background: radial-gradient(circle at 50% 0%, #4a3b45 0%, #241d27 45%, #17131c 100%);
   color: var(--luxe-primary);
   min-height: 100dvh;
   overflow-x: hidden;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
+  background: var(--luxe-bg);
+  box-shadow: 0 0 0 1px rgba(200, 169, 110, 0.24), 0 28px 90px rgba(0, 0, 0, 0.46);
+}
+
+@media (min-width: 521px) {
+  body { padding: 24px; }
+  .app-shell {
+    min-height: calc(100dvh - 48px);
+    border-radius: 30px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    max-width: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
 /* Bottom nav safe area */
