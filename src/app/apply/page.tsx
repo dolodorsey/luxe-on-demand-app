@@ -18,7 +18,7 @@ const SERVICES = [
   { cat: "Bridal & Events", items: ["Bridal Solo Package","Bridal Party","Group Glam","Glam Squad"] },
 ];
 const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DC","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
-const WEBHOOK = "https://dorsey.app.n8n.cloud/webhook/provider-application";
+const APPLICATION_ENDPOINT = "https://dzlmtvodpyhetvektfuo.supabase.co/functions/v1/luxe-provider-application";
 
 export default function ApplyPage() {
   const [step, setStep] = useState(0);
@@ -40,7 +40,8 @@ export default function ApplyPage() {
   const submit = async () => {
     setSubmitting(true); setError(null);
     try {
-      const res = await fetch(WEBHOOK, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({...form, brand:"luxe_on_demand", state_code:form.state}) });
+      const res = await fetch(APPLICATION_ENDPOINT, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({...form, state_code:form.state}) });
+      if (!res.ok) throw new Error("Application service unavailable");
       const data = await res.json();
       if (data.success) { setResult(data); setStep(4); } else setError(data.error||"Failed");
     } catch(e) { setError("Network error"); }

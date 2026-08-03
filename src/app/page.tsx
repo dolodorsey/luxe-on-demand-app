@@ -1,5 +1,6 @@
 "use client";
 import React,{useState,useEffect,useCallback} from 'react';
+import {signUp,signIn,signOut,getSession,getProfile,createBooking,getBookings,getStylistProfile,getStylistBookings,getAvailableRequests,setStylistDuty,acceptRequest,transitionBooking} from '../lib/supabase';
 
 /* ─── Haptic feedback for native iOS ─── */
 // @ts-ignore — Capacitor haptics only available in native shell
@@ -162,6 +163,7 @@ export default function LuxeApp(){
   C=T;  const[isOffline,setIsOffline]=useState(false);
 
   useEffect(()=>{setIsOffline(!navigator.onLine);const on=()=>setIsOffline(false);const off=()=>setIsOffline(true);window.addEventListener('online',on);window.addEventListener('offline',off);return()=>{window.removeEventListener('online',on);window.removeEventListener('offline',off)}},[]);
+  useEffect(()=>{getSession().then(async session=>{if(!session?.user)return;try{const p=await getProfile(session.user.id);setUserName(`${p.first_name||''} ${p.last_name||''}`.trim()||'User');setUserId(session.user.id);setScreen(p.role==='stylist'?'stylist':'client');}catch{}});},[]);
 
   const navigate=useCallback((s:string)=>{setFade(false);setTimeout(()=>{setScreen(s);setFade(true);window.scrollTo(0,0);},200);},[]);
 
@@ -193,8 +195,8 @@ export default function LuxeApp(){
         {screen==='landing'&&<Landing T={T} onBook={()=>navigate('auth-client')} onStylistPortal={()=>navigate('auth-stylist')}/>}
         {screen==='auth-client'&&<AuthScreen T={T} role="client" gender={gender} setGender={setGender} onBack={()=>navigate('landing')} onLogin={(n,id)=>{setUserName(n);setUserId(id);navigate('client');}}/>}
         {screen==='auth-stylist'&&<AuthScreen T={T} role="stylist" gender={gender} setGender={setGender} onBack={()=>navigate('landing')} onLogin={(n,id)=>{setUserName(n);setUserId(id);navigate('stylist');}}/>}
-        {screen==='client'&&<ClientApp T={T} userName={userName} userId={userId} onBack={()=>{setUserName('');setUserId('');navigate('landing');}}/>}
-        {screen==='stylist'&&<StylistDashboard T={T} userName={userName} userId={userId} onBack={()=>{setUserName('');setUserId('');navigate('landing');}}/>}
+        {screen==='client'&&<ClientApp T={T} userName={userName} userId={userId} onBack={async()=>{await signOut();setUserName('');setUserId('');navigate('landing');}}/>}
+        {screen==='stylist'&&<StylistDashboard T={T} userName={userName} userId={userId} onBack={async()=>{await signOut();setUserName('');setUserId('');navigate('landing');}}/>}
       </div>
     </>
   );
@@ -223,9 +225,14 @@ const AuthScreen=({T,role,gender,setGender,onBack,onLogin}:{T:typeof THEME_FEMAL
   const handleSubmit=async()=>{
     if(!isValid||loading)return;setLoading(true);setAuthError('');
     try{
-      // Demo mode — bypass auth for now
-      const displayName=name.trim()||email.split('@')[0]||'User';
-      onLogin(displayName,'demo-user-id');
+      if(mode==='signup'&&!isClient){window.location.assign('/apply');return;}
+      const data=mode==='signup'?await signUp(email,password,name.trim(),'client'):await signIn(email,password);
+      if(mode==='signup'&&!data.session){throw new Error('Check your email to confirm your account, then sign in.');}
+      const user=data.user;if(!user)throw new Error('Authentication failed');
+      const profile=await getProfile(user.id);
+      if(!isClient&&profile.role!=='stylist')throw new Error('Your stylist account is not approved yet. Submit an application or contact LUXE support.');
+      const displayName=`${profile.first_name||''} ${profile.last_name||''}`.trim()||email.split('@')[0];
+      onLogin(displayName,user.id);
     }catch(err:any){
       let msg=err.message||'Authentication failed';
       if(msg.includes('Invalid login'))msg='Invalid email or password';
@@ -248,7 +255,7 @@ const AuthScreen=({T,role,gender,setGender,onBack,onLogin}:{T:typeof THEME_FEMAL
 
         <div style={{...flex('row','center','center',0),width:'100%',marginBottom:28,background:T.card2,borderRadius:12,padding:4,border:`1px solid ${T.border}`,transition:'all .4s'}}>
           <button onClick={()=>{setMode('signin');setTouched({});}} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signin'?accent:'transparent',color:mode==='signin'?T.white:T.muted,transition:'all .2s'}}>Sign In</button>
-          <button onClick={()=>{setMode('signup');setTouched({});}} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signup'?accent:'transparent',color:mode==='signup'?T.white:T.muted,transition:'all .2s'}}>Create Account</button>
+          <button onClick={()=>{if(!isClient){window.location.assign('/apply');return;}setMode('signup');setTouched({});}} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signup'?accent:'transparent',color:mode==='signup'?T.white:T.muted,transition:'all .2s'}}>{isClient?'Create Account':'Apply'}</button>
         </div>
 
         <div style={{width:'100%',maxWidth:360}}>
@@ -373,12 +380,16 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
   const[eta,setEta]=useState(1800);
   const[notifOpen,setNotifOpen]=useState(false);
   const[serviceMode,setServiceMode]=useState<'mobile'|'in_studio'>('mobile');
+  const[bookingHistory,setBookingHistory]=useState<any[]>([]);
+  const[requestError,setRequestError]=useState('');
+
+  useEffect(()=>{if(userId)getBookings(userId).then(setBookingHistory).catch(()=>{});},[userId]);
 
   useEffect(()=>{if(reqStep!=='tracking')return;const t=setInterval(()=>setEta(p=>Math.max(0,p-1)),1000);return()=>clearInterval(t);},[reqStep]);
 
   const startRequest=(svc:any)=>{tap();setSelectedService(svc);setReqStep('confirm');};
 
-  const dispatchStylist=async()=>{tap('Heavy');setReqStep('finding');setTimeout(()=>setReqStep('found'),3000);};
+  const dispatchStylist=async()=>{tap('Heavy');setReqStep('finding');try{let address=serviceMode==='mobile'?'Current GPS location':'';let lat:number|undefined,lng:number|undefined;if(serviceMode==='mobile'&&navigator.geolocation){try{const p:GeolocationPosition=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{timeout:8000}));lat=p.coords.latitude;lng=p.coords.longitude;address=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;}catch{}}await createBooking({client_auth_id:userId,subcategory_name:selectedService.name,service_mode:serviceMode,address,lat,lng});setBookingHistory(await getBookings(userId));setRequestError('');setReqStep('found');}catch(error:any){setRequestError(error.message||'Your booking could not be submitted');setReqStep('confirm');}};
   const startTracking=()=>{setEta(1800);setReqStep('tracking');};
   const cancelRequest=()=>{setReqStep(null);setSelectedService(null);};
   const formatEta=(s:number)=>`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
@@ -408,6 +419,7 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
         {serviceMode==='mobile'&&<div style={{width:'100%',padding:'16px 20px',background:`${C.accent}08`,borderRadius:14,marginBottom:24,...flex('row','center','flex-start',10)}}><span style={{fontSize:18}}>📍</span><div><div style={{fontSize:13,fontWeight:600,color:C.text}}>Your current location</div><div style={{fontSize:11,color:C.muted}}>GPS detected automatically</div></div></div>}
 
         <button onClick={dispatchStylist} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.secondary})`),width:'100%',fontSize:18,padding:'18px 32px',boxShadow:`0 8px 30px ${C.accent}25`,borderRadius:16}}>💎 Find My Stylist</button>
+        {requestError&&<div style={{fontSize:12,color:C.red,marginTop:12,textAlign:'center'}}>{requestError}</div>}
       </div>
     </div>
   );
@@ -429,20 +441,20 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
   /* ── Found Screen ── */
   if(reqStep==='found') return(
     <div style={{minHeight:'100dvh',background:C.bg,...flex('column','center','center'),padding:24}}>
-      <div style={{fontSize:48,marginBottom:16,animation:'bounce-in .5s ease'}}>🎉</div>
-      <h2 style={{fontSize:24,fontWeight:700,color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Stylist Matched!</h2>
-      <p style={{fontSize:14,color:C.gray,margin:'0 0 24px'}}>{serviceMode==='mobile'?'On the way to you':'Your appointment is confirmed'}</p>
+      <div style={{fontSize:48,marginBottom:16,animation:'bounce-in .5s ease'}}>✅</div>
+      <h2 style={{fontSize:24,fontWeight:700,color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Booking Requested</h2>
+      <p style={{fontSize:14,color:C.gray,margin:'0 0 24px'}}>A fully verified stylist can now accept it.</p>
       <div style={{...cardStyle,width:'100%',maxWidth:360}}>
         <div style={{...flex('row','center','flex-start',16),marginBottom:20}}>
-          <div style={{width:64,height:64,borderRadius:16,background:`${C.accent}12`,...flex('row','center','center'),fontSize:32}}>✂️</div>
-          <div><div style={{fontSize:20,fontWeight:800,color:C.text}}>Jasmine R.</div><div style={{fontSize:13,color:C.yellow}}>★ 4.9 · 247 bookings</div><div style={{display:'inline-block',marginTop:4,padding:'2px 10px',borderRadius:100,background:`${C.secondary}15`,color:C.secondary,fontSize:10,fontWeight:700,letterSpacing:0.5}}>ELITE</div></div>
+          <div style={{width:64,height:64,borderRadius:16,background:`${C.accent}12`,...flex('row','center','center'),fontSize:32}}>📡</div>
+          <div><div style={{fontSize:20,fontWeight:800,color:C.text}}>Matching in progress</div><div style={{fontSize:13,color:C.gray}}>No stylist is assigned yet.</div></div>
         </div>
-        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>ETA</span><span style={{fontSize:16,fontWeight:700,color:C.text}}>~30 min</span></div>
+        <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>Status</span><span style={{fontSize:16,fontWeight:700,color:C.text}}>Requested</span></div>
         <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>Service</span><span style={{fontSize:13,fontWeight:600,color:C.text}}>{selectedService?.name}</span></div>
         <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>Mode</span><span style={{fontSize:13,fontWeight:600,color:serviceMode==='mobile'?C.green:C.accent}}>{serviceMode==='mobile'?'📍 Coming to you':'🏠 At studio'}</span></div>
         <div style={{...flex('row','center','space-between'),padding:'12px 0',borderTop:`1.5px solid ${GOLD}25`}}><span style={{fontSize:13,color:C.gray}}>Price</span><span style={{fontSize:16,fontWeight:800,color:C.accent}}>${selectedService?.price}</span></div>
       </div>
-      <button onClick={startTracking} style={{...btn(C.green),width:'100%',maxWidth:360,fontSize:16,marginTop:24,borderRadius:16}}>Track My Stylist →</button>
+      <button onClick={cancelRequest} style={{...btn(C.green),width:'100%',maxWidth:360,fontSize:16,marginTop:24,borderRadius:16}}>View My Bookings</button>
     </div>
   );
 
@@ -553,11 +565,11 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
           {/* Recent */}
           <div style={{padding:'16px 20px'}}>
             <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:12}}>Recent Bookings</div>
-            {CLIENT_HISTORY.length===0?<div style={{...cardStyle,textAlign:'center' as any,padding:'24px 20px'}}><div style={{fontSize:28,marginBottom:8}}>✨</div><div style={{fontSize:13,color:C.muted}}>No bookings yet. Book your first service!</div></div>:
-            CLIENT_HISTORY.map((h,i)=>(
-              <div key={i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:10}}>
-                <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{h.service}</div><div style={{fontSize:12,color:C.muted}}>{h.stylist} · {h.date}</div><button onClick={()=>openPaymentUrl(LUXE_STRIPE_PAYMENT_URL)} style={{...btn(C.card2,C.accent,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`})}}>Pay with Card</button></div>
-                <div style={{textAlign:'right' as any}}><div style={{fontSize:16,fontWeight:800,color:C.accent}}>${h.cost}</div><div style={{fontSize:10,fontWeight:600,color:h.status==='Completed'?C.green:C.orange}}>{h.status}</div></div>
+            {bookingHistory.length===0?<div style={{...cardStyle,textAlign:'center' as any,padding:'24px 20px'}}><div style={{fontSize:28,marginBottom:8}}>✨</div><div style={{fontSize:13,color:C.muted}}>No bookings yet. Book your first service!</div></div>:
+            bookingHistory.slice(0,3).map((h,i)=>(
+              <div key={h.id||i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:10}}>
+                <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{h.cs_subcategories?.name||h.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{new Date(h.created_at).toLocaleString()}</div><button disabled style={{...btn(C.card2,C.muted,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`,cursor:'not-allowed'})}}>Invoice required</button></div>
+                <div style={{textAlign:'right' as any}}><div style={{fontSize:16,fontWeight:800,color:C.accent}}>${Number(h.final_price||h.estimated_price||0).toFixed(2)}</div><div style={{fontSize:10,fontWeight:600,color:h.status==='completed'?C.green:C.orange}}>{String(h.status).replace('_',' ')}</div></div>
               </div>
             ))}
           </div>
@@ -569,10 +581,11 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
       {tab==='activity'&&(
         <div className="anim-tab" style={{padding:20}}>
           <h2 style={{fontSize:20,fontWeight:800,color:C.text,marginBottom:16}}>Booking History</h2>
-          {CLIENT_HISTORY.map((h,i)=>(
-            <div key={i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:12}}>
-              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{h.service}</div><div style={{fontSize:12,color:C.muted}}>{h.stylist} · {h.date}</div><button onClick={()=>openPaymentUrl(LUXE_STRIPE_PAYMENT_URL)} style={{...btn(C.card2,C.accent,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`})}}>Pay with Card</button></div>
-              <div style={{textAlign:'right' as any}}><div style={{fontSize:18,fontWeight:800,color:C.accent}}>${h.cost}</div><div style={{fontSize:10,fontWeight:600,color:C.green}}>{h.status}</div></div>
+          {bookingHistory.length===0&&<div style={{...cardStyle,textAlign:'center',color:C.muted}}>No bookings yet.</div>}
+          {bookingHistory.map((h,i)=>(
+            <div key={h.id||i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:12}}>
+              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{h.cs_subcategories?.name||h.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{new Date(h.created_at).toLocaleString()}</div><button disabled style={{...btn(C.card2,C.muted,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`,cursor:'not-allowed'})}}>Payment after verified invoice</button></div>
+              <div style={{textAlign:'right' as any}}><div style={{fontSize:18,fontWeight:800,color:C.accent}}>${Number(h.final_price||h.estimated_price||0).toFixed(2)}</div><div style={{fontSize:10,fontWeight:600,color:C.green}}>{String(h.status).replace('_',' ')}</div></div>
             </div>
           ))}
         </div>
@@ -611,9 +624,17 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
 const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:string;userId:string;onBack:()=>void})=>{
   const[tab,setTab]=useState('dashboard');
   const[onDuty,setOnDuty]=useState(false);
+  const[offers,setOffers]=useState<any[]>([]);const[jobs,setJobs]=useState<any[]>([]);const[portalError,setPortalError]=useState('');
 
-  const todayEarnings=STYLIST_HISTORY.filter(m=>m.time!=='Yesterday').reduce((s,m)=>s+m.earned,0);
-  const weekEarnings=STYLIST_HISTORY.reduce((s,m)=>s+m.earned,0);
+  const refresh=useCallback(async()=>{try{const[p,j,o]=await Promise.all([getStylistProfile(userId),getStylistBookings(),getAvailableRequests()]);setOnDuty(Boolean(p?.on_duty));setJobs(j);setOffers(o);setPortalError('');}catch(e:any){setPortalError(e.message||'Could not load stylist portal');}},[userId]);
+  useEffect(()=>{if(userId)refresh();},[userId,refresh]);
+  const setDuty=async(next:boolean)=>{try{let lat:number|undefined,lng:number|undefined;if(next&&navigator.geolocation){try{const p:GeolocationPosition=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{timeout:8000}));lat=p.coords.latitude;lng=p.coords.longitude;}catch{}}await setStylistDuty(next,lat,lng);setOnDuty(next);await refresh();}catch(e:any){setPortalError(e.message||'Availability could not be updated');}};
+  const takeOffer=async(id:string)=>{try{await acceptRequest(id);setTab('jobs');await refresh();}catch(e:any){setPortalError(e.message||'Request is no longer available');await refresh();}};
+  const advance=async(job:any)=>{const next=({accepted:'en_route',en_route:'arrived',arrived:'in_progress',in_progress:'completed'} as any)[job.status];if(!next)return;try{await transitionBooking(job.id,next);await refresh();}catch(e:any){setPortalError(e.message||'Booking status could not be updated');}};
+
+  const completed=jobs.filter(j=>j.status==='completed');
+  const todayEarnings=completed.filter(j=>new Date(j.completed_at).toDateString()===new Date().toDateString()).reduce((s,j)=>s+Number(j.final_price||0),0);
+  const weekEarnings=completed.filter(j=>Date.now()-new Date(j.completed_at).getTime()<7*86400000).reduce((s,j)=>s+Number(j.final_price||0),0);
 
   return(
     <div style={{minHeight:'100dvh',background:C.bg,paddingBottom:80,transition:'background .4s'}}>
@@ -638,7 +659,7 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
 
           <div style={{...cardStyle,...flex('row','center','space-between'),marginBottom:16,border:`1px solid ${onDuty?`${C.green}40`:C.border}`}}>
             <div><div style={{fontSize:16,fontWeight:700,color:C.text}}>Availability</div><div style={{fontSize:12,color:onDuty?C.green:C.muted}}>{onDuty?'Receiving booking requests':'Go online to receive bookings'}</div></div>
-            <button onClick={()=>setOnDuty(!onDuty)} style={{width:56,height:32,borderRadius:16,background:onDuty?C.green:C.grayLighter,border:'none',cursor:'pointer',position:'relative',transition:'all .3s'}}><div style={{width:26,height:26,borderRadius:'50%',background:C.white,position:'absolute',top:3,left:onDuty?27:3,transition:'left .3s',boxShadow:'0 2px 4px rgba(0,0,0,0.15)'}}/></button>
+            <button onClick={()=>setDuty(!onDuty)} style={{width:56,height:32,borderRadius:16,background:onDuty?C.green:C.grayLighter,border:'none',cursor:'pointer',position:'relative',transition:'all .3s'}}><div style={{width:26,height:26,borderRadius:'50%',background:C.white,position:'absolute',top:3,left:onDuty?27:3,transition:'left .3s',boxShadow:'0 2px 4px rgba(0,0,0,0.15)'}}/></button>
           </div>
 
           {/* Map */}
@@ -650,8 +671,10 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
 
           <div style={cardStyle}>
             <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:12}}>Incoming Bookings</div>
-            {!onDuty?<div style={{textAlign:'center',padding:'20px 0'}}><div style={{fontSize:28,marginBottom:8}}>💤</div><div style={{fontSize:13,color:C.muted}}>Go online to receive bookings</div></div>:
-            <div style={{textAlign:'center',padding:'20px 0'}}><div style={{fontSize:28,marginBottom:8}}>📡</div><div style={{fontSize:13,color:C.green}}>Listening for requests...</div></div>}
+            {portalError&&<div style={{fontSize:12,color:C.red,marginBottom:10}}>{portalError}</div>}
+            {!onDuty?<div style={{textAlign:'center',padding:'20px 0'}}><div style={{fontSize:28,marginBottom:8}}>💤</div><div style={{fontSize:13,color:C.muted}}>Go online to receive bookings</div></div>:offers.length===0?
+            <div style={{textAlign:'center',padding:'20px 0'}}><div style={{fontSize:28,marginBottom:8}}>📡</div><div style={{fontSize:13,color:C.green}}>Listening for verified requests...</div></div>:
+            <div>{offers.map(o=><div key={o.id} style={{padding:'10px 0',borderTop:`1px solid ${C.border}`,...flex('row','center','space-between')}}><div><div style={{fontWeight:700}}>{o.subcategory_id}</div><div style={{fontSize:11,color:C.muted}}>{o.service_mode} · ${Number(o.estimated_price||0).toFixed(2)}</div></div><button onClick={()=>takeOffer(o.id)} style={{...btn(C.secondary,C.white,{padding:'8px 12px',fontSize:11})}}>Accept</button></div>)}</div>}
           </div>
         </div>
       )}
@@ -659,10 +682,11 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
       {tab==='jobs'&&(
         <div className="anim-tab" style={{padding:20}}>
           <h2 style={{fontSize:20,fontWeight:800,color:C.text,marginBottom:16}}>Recent Bookings</h2>
-          {STYLIST_HISTORY.map((m,i)=>(
-            <div key={i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:12}}>
-              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{m.service}</div><div style={{fontSize:12,color:C.muted}}>{m.client} · {m.time}</div><div style={{fontSize:11,color:C.yellow}}>{'★'.repeat(m.rating)}</div></div>
-              <div style={{fontSize:20,fontWeight:800,color:C.green}}>+${m.earned}</div>
+          {jobs.length===0&&<div style={{...cardStyle,textAlign:'center',color:C.muted}}>No accepted bookings yet.</div>}
+          {jobs.map((m,i)=>(
+            <div key={m.id||i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:12}}>
+              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{m.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{String(m.status).replace('_',' ')}</div></div>
+              <div style={{textAlign:'right'}}><div style={{fontSize:20,fontWeight:800,color:C.green}}>${Number(m.final_price||m.estimated_price||0).toFixed(2)}</div>{['accepted','en_route','arrived','in_progress'].includes(m.status)&&<button onClick={()=>advance(m)} style={{...btn(C.secondary,C.white,{padding:'7px 10px',fontSize:10,marginTop:6})}}>{({accepted:'Start route',en_route:'Arrived',arrived:'Start service',in_progress:'Complete'} as any)[m.status]}</button>}</div>
             </div>
           ))}
         </div>
@@ -677,10 +701,7 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
           </div>
           <h3 style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:12}}>Payout Breakdown</h3>
           <div style={cardStyle}>
-            {([['Base earnings','$1,280.00'],['Tips','$165.00'],['Bonuses','$75.00'],['Platform fee','-$128.00']] as const).map(([label,val])=>(
-              <div key={label} style={{...flex('row','center','space-between'),padding:'10px 0',borderBottom:`1px solid ${C.border}`}}><span style={{fontSize:14,color:C.gray}}>{label}</span><span style={{fontSize:14,fontWeight:700,color:val.startsWith('-')?C.red:C.text}}>{val}</span></div>
-            ))}
-            <div style={{...flex('row','center','space-between'),padding:'12px 0 0'}}><span style={{fontSize:16,fontWeight:800,color:C.text}}>Net Payout</span><span style={{fontSize:20,fontWeight:900,color:C.green}}>$1,392.00</span></div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>Verified completed-service totals appear above. Net payouts, tips, and platform fees will appear only after booking-specific Stripe Connect settlement is activated.</div>
           </div>
         </div>
       )}
