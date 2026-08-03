@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#FAF7F4",
+  themeColor: "#140d14",
   viewportFit: "cover",
 };
 
@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="app-shell pb-safe">{children}</div>
+        <div className="app-shell pb-safe luxe-premium" data-app="luxe-on-demand">{children}</div>
       </body>
     </html>
   );
