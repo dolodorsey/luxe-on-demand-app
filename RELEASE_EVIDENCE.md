@@ -25,9 +25,14 @@
 
 ## Payment gate
 
-- Customer payment actions remain disabled and clearly say payment follows a verified invoice.
-- A leaked live Stripe secret was not stored or used. Production payments require a rotated restricted secret and a separate webhook-signing secret before implementation and end-to-end testing.
+- Booking-specific Stripe Connect infrastructure is implemented: manual customer authorization after stylist acceptance, capture only after completion, a 20% platform fee, and release to the assigned stylist only after Stripe confirms capture and the connected payout account is ready.
+- Customers can authorize the confirmed booking total in Stripe's Payment Element and see its live state. Stylists cannot begin travel without authorization, can complete and capture assigned work, can launch Connect onboarding, and see only funds actually released as earnings.
+- The payment ledger and idempotent webhook-event ledger are protected by RLS; browser clients have read-only access to their own records. Webhook writes and money movement use server credentials only.
+- Cancellation, failed-payment, refund, dispute, authorization, capture, and release states are represented. Payment handling is described as authorization/capture/settlement, not legal escrow.
+- Both payment Edge Functions are active and fail closed when credentials are absent. The leaked live Stripe secret was not stored or used. A rotated secret, publishable key, and separate webhook-signing secret are still required for the controlled live-money test.
 
 ## Dependency note
 
-- The application uses the current stable Next.js release. `npm audit --omit=dev` reports upstream PostCSS advisories inside Next.js; the automated force-fix incorrectly proposes downgrading to Next 9 and was not applied.
+- The application uses Next.js 16.2.12, React 19.2.8, Supabase JS 2.112.0, Stripe Elements, and Capacitor 8.5.0.
+- The production dependency audit reports zero vulnerabilities. Capacitor's CLI is development-only; its current upstream `xcode` helper has a moderate advisory that does not ship in the web or native runtime.
+- Production build and iOS Capacitor synchronization pass. The current packages require Node 22 for release tooling.

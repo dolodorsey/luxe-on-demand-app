@@ -1,6 +1,8 @@
 "use client";
 import React,{useState,useEffect,useCallback} from 'react';
-import {signUp,signIn,signOut,getSession,getProfile,createBooking,getBookings,getStylistProfile,getStylistBookings,getAvailableRequests,setStylistDuty,acceptRequest,transitionBooking} from '../lib/supabase';
+import {Elements,PaymentElement,useElements,useStripe} from '@stripe/react-stripe-js';
+import {loadStripe} from '@stripe/stripe-js';
+import {signUp,signIn,signOut,getSession,getProfile,createBooking,getBookings,getStylistProfile,getStylistBookings,getAvailableRequests,setStylistDuty,acceptRequest,transitionBooking,paymentAction,getBookingPayments,rateBooking} from '../lib/supabase';
 
 /* ─── Haptic feedback for native iOS ─── */
 // @ts-ignore — Capacitor haptics only available in native shell
@@ -342,6 +344,8 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
 /* ════════════════════════════════════════ */
 /*            CLIENT APP                   */
 /* ════════════════════════════════════════ */
+const stripePromise=process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY):null;
+const PaymentForm=({onDone}:{onDone:()=>void})=>{const stripe=useStripe(),elements=useElements();const[busy,setBusy]=useState(false),[error,setError]=useState('');return <form onSubmit={async e=>{e.preventDefault();if(!stripe||!elements)return;setBusy(true);const result=await stripe.confirmPayment({elements,redirect:'if_required',confirmParams:{return_url:window.location.href}});setBusy(false);if(result.error)setError(result.error.message||'Payment authorization failed');else onDone();}}><PaymentElement/><button disabled={!stripe||busy} style={{...btn(C.accent,C.white,{width:'100%',marginTop:16})}}>{busy?'Securing authorization…':'Authorize confirmed total'}</button>{error&&<div style={{fontSize:12,color:C.red,marginTop:10}}>{error}</div>}<div style={{fontSize:11,color:C.muted,marginTop:12,lineHeight:1.5}}>Your card is authorized now. It is captured only after the service is marked complete.</div></form>};
 const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:string;userId:string;onBack:()=>void})=>{
   const[tab,setTab]=useState('home');
   const[selectedService,setSelectedService]=useState<any>(null);
@@ -349,9 +353,15 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
   const[notifOpen,setNotifOpen]=useState(false);
   const[serviceMode,setServiceMode]=useState<'mobile'|'in_studio'>('mobile');
   const[bookingHistory,setBookingHistory]=useState<any[]>([]);
+  const[paymentByBooking,setPaymentByBooking]=useState<Record<string,any>>({});
+  const[clientSecret,setClientSecret]=useState('');
+  const[paymentBooking,setPaymentBooking]=useState<any>(null);
   const[requestError,setRequestError]=useState('');
 
-  useEffect(()=>{if(userId)getBookings(userId).then(setBookingHistory).catch(()=>{});},[userId]);
+  const refreshClient=useCallback(async()=>{if(!userId)return;const[b,p]=await Promise.all([getBookings(userId),getBookingPayments()]);setBookingHistory(b);setPaymentByBooking(Object.fromEntries(p.map((x:any)=>[x.booking_id,x])));},[userId]);
+  useEffect(()=>{refreshClient().catch(()=>{});},[refreshClient]);
+  const authorize=async(h:any)=>{try{const data=await paymentAction('authorize',h.id);if(!stripePromise)throw new Error('Secure card entry is not configured yet');setPaymentBooking(h);setClientSecret(data.client_secret);setRequestError('');}catch(e:any){setRequestError(e.message||'Payment authorization unavailable');}};
+  const rateFive=async(id:string)=>{try{await rateBooking(id,5);setRequestError('Thanks — your rating is saved.');}catch(e:any){setRequestError(e.message||'Rating could not be saved');}};
 
   const startRequest=(svc:any)=>{tap();setSelectedService(svc);setReqStep('confirm');};
 
@@ -532,7 +542,7 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
             {bookingHistory.length===0?<div style={{...cardStyle,textAlign:'center' as any,padding:'24px 20px'}}><div style={{fontSize:28,marginBottom:8}}>✨</div><div style={{fontSize:13,color:C.muted}}>No bookings yet. Book your first service!</div></div>:
             bookingHistory.slice(0,3).map((h,i)=>(
               <div key={h.id||i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:10}}>
-                <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{h.cs_subcategories?.name||h.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{new Date(h.created_at).toLocaleString()}</div><button disabled style={{...btn(C.card2,C.muted,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`,cursor:'not-allowed'})}}>Invoice required</button></div>
+                <div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{h.cs_subcategories?.name||h.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{new Date(h.created_at).toLocaleString()}</div>{h.status==='accepted'&&!['authorized','captured','released'].includes(paymentByBooking[h.id]?.status)&&<button onClick={()=>authorize(h)} style={{...btn(C.accent,C.white,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8})}}>Authorize payment</button>}<div style={{fontSize:10,color:C.muted,marginTop:6}}>Payment: {paymentByBooking[h.id]?.status||'awaiting stylist'}</div></div>
                 <div style={{textAlign:'right' as any}}><div style={{fontSize:16,fontWeight:800,color:C.accent}}>${Number(h.final_price||h.estimated_price||0).toFixed(2)}</div><div style={{fontSize:10,fontWeight:600,color:h.status==='completed'?C.green:C.orange}}>{String(h.status).replace('_',' ')}</div></div>
               </div>
             ))}
@@ -548,7 +558,7 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
           {bookingHistory.length===0&&<div style={{...cardStyle,textAlign:'center',color:C.muted}}>No bookings yet.</div>}
           {bookingHistory.map((h,i)=>(
             <div key={h.id||i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:12}}>
-              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{h.cs_subcategories?.name||h.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{new Date(h.created_at).toLocaleString()}</div><button disabled style={{...btn(C.card2,C.muted,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`,cursor:'not-allowed'})}}>Payment after verified invoice</button></div>
+              <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{h.cs_subcategories?.name||h.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{new Date(h.created_at).toLocaleString()}</div>{h.status==='accepted'&&!['authorized','captured','released'].includes(paymentByBooking[h.id]?.status)&&<button onClick={()=>authorize(h)} style={{...btn(C.accent,C.white,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8})}}>Authorize payment</button>}{h.status==='completed'&&<button onClick={()=>rateFive(h.id)} style={{...btn(C.card2,C.accent,{padding:'8px 12px',fontSize:11,fontWeight:700,marginTop:8,border:`1px solid ${C.border}`})}}>Rate 5 stars</button>}<div style={{fontSize:10,color:C.muted,marginTop:6}}>Payment: {paymentByBooking[h.id]?.status||'not started'}</div></div>
               <div style={{textAlign:'right' as any}}><div style={{fontSize:18,fontWeight:800,color:C.accent}}>${Number(h.final_price||h.estimated_price||0).toFixed(2)}</div><div style={{fontSize:10,fontWeight:600,color:C.green}}>{String(h.status).replace('_',' ')}</div></div>
             </div>
           ))}
@@ -569,6 +579,8 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
         </div>
       )}
 
+      {clientSecret&&stripePromise&&<div style={{position:'fixed',inset:0,zIndex:80,background:'rgba(10,10,20,.68)',padding:20,...flex('column','center','center')}}><div style={{width:'100%',maxWidth:390,background:C.card,borderRadius:20,padding:20}}><div style={{...flex('row','center','space-between'),marginBottom:16}}><div><div style={{fontSize:17,fontWeight:800}}>Secure payment authorization</div><div style={{fontSize:12,color:C.muted}}>{paymentBooking?.cs_subcategories?.name}</div></div><button onClick={()=>setClientSecret('')} style={{border:'none',background:'transparent',fontSize:20}}>×</button></div><Elements stripe={stripePromise} options={{clientSecret,appearance:{theme:'stripe',variables:{colorPrimary:C.accent,borderRadius:'10px'}}}}><PaymentForm onDone={()=>{setClientSecret('');refreshClient().catch(()=>{});}}/></Elements></div></div>}
+
       {/* Bottom Nav — GOLD TRIM */}
       <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px) saturate(180%)',WebkitBackdropFilter:'blur(20px) saturate(180%)',borderTop:`1.5px solid ${GOLD}35`,padding:'8px 0 env(safe-area-inset-bottom,8px)',...flex('row','center','space-around'),zIndex:40,boxShadow:`0 -2px 12px ${GOLD_GLOW}`}}>
         {([['home','🏠','Home'],['services','✨','Services'],['activity','📋','Activity'],['profile','👤','Profile']] as const).map(([id,ic,label])=>(
@@ -588,17 +600,18 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
 const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:string;userId:string;onBack:()=>void})=>{
   const[tab,setTab]=useState('dashboard');
   const[onDuty,setOnDuty]=useState(false);
-  const[offers,setOffers]=useState<any[]>([]);const[jobs,setJobs]=useState<any[]>([]);const[portalError,setPortalError]=useState('');
+  const[offers,setOffers]=useState<any[]>([]);const[jobs,setJobs]=useState<any[]>([]);const[payments,setPayments]=useState<any[]>([]);const[stylistProfile,setStylistProfile]=useState<any>(null);const[portalError,setPortalError]=useState('');
 
-  const refresh=useCallback(async()=>{try{const[p,j,o]=await Promise.all([getStylistProfile(userId),getStylistBookings(),getAvailableRequests()]);setOnDuty(Boolean(p?.on_duty));setJobs(j);setOffers(o);setPortalError('');}catch(e:any){setPortalError(e.message||'Could not load stylist portal');}},[userId]);
+  const refresh=useCallback(async()=>{try{const[p,j,o,pay]=await Promise.all([getStylistProfile(userId),getStylistBookings(),getAvailableRequests(),getBookingPayments()]);setStylistProfile(p);setOnDuty(Boolean(p?.on_duty));setJobs(j);setOffers(o);setPayments(pay);setPortalError('');}catch(e:any){setPortalError(e.message||'Could not load stylist portal');}},[userId]);
   useEffect(()=>{if(userId)refresh();},[userId,refresh]);
   const setDuty=async(next:boolean)=>{try{let lat:number|undefined,lng:number|undefined;if(next&&navigator.geolocation){try{const p:GeolocationPosition=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{timeout:8000}));lat=p.coords.latitude;lng=p.coords.longitude;}catch{}}await setStylistDuty(next,lat,lng);setOnDuty(next);await refresh();}catch(e:any){setPortalError(e.message||'Availability could not be updated');}};
   const takeOffer=async(id:string)=>{try{await acceptRequest(id);setTab('jobs');await refresh();}catch(e:any){setPortalError(e.message||'Request is no longer available');await refresh();}};
-  const advance=async(job:any)=>{const next=({accepted:'en_route',en_route:'arrived',arrived:'in_progress',in_progress:'completed'} as any)[job.status];if(!next)return;try{await transitionBooking(job.id,next);await refresh();}catch(e:any){setPortalError(e.message||'Booking status could not be updated');}};
+  const advance=async(job:any)=>{const next=({accepted:'en_route',en_route:'arrived',arrived:'in_progress',in_progress:'completed'} as any)[job.status];if(!next)return;try{await transitionBooking(job.id,next);if(next==='completed')await paymentAction('capture',job.id);await refresh();}catch(e:any){setPortalError(e.message||'Booking status could not be updated');}};
+  const openPayouts=async()=>{try{const data=await paymentAction('connect_onboarding');window.location.assign(data.url);}catch(e:any){setPortalError(e.message||'Payout setup is unavailable');}};
 
-  const completed=jobs.filter(j=>j.status==='completed');
-  const todayEarnings=completed.filter(j=>new Date(j.completed_at).toDateString()===new Date().toDateString()).reduce((s,j)=>s+Number(j.final_price||0),0);
-  const weekEarnings=completed.filter(j=>Date.now()-new Date(j.completed_at).getTime()<7*86400000).reduce((s,j)=>s+Number(j.final_price||0),0);
+  const released=payments.filter(p=>p.status==='released');
+  const todayEarnings=released.filter(p=>new Date(p.released_at).toDateString()===new Date().toDateString()).reduce((s,p)=>s+Number(p.stylist_payout_cents||0)/100,0);
+  const weekEarnings=released.filter(p=>Date.now()-new Date(p.released_at).getTime()<7*86400000).reduce((s,p)=>s+Number(p.stylist_payout_cents||0)/100,0);
 
   return(
     <div style={{minHeight:'100dvh',background:C.bg,paddingBottom:80,transition:'background .4s'}}>
@@ -617,7 +630,7 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,textAlign:'center'}}>
               <div><div style={{fontSize:11,color:C.muted}}>Today</div><div style={{fontSize:24,fontWeight:900,color:C.green}}>${todayEarnings}</div></div>
               <div><div style={{fontSize:11,color:C.muted}}>This Week</div><div style={{fontSize:24,fontWeight:900,color:C.text}}>${weekEarnings}</div></div>
-              <div><div style={{fontSize:11,color:C.muted}}>Rating</div><div style={{fontSize:24,fontWeight:900,color:C.yellow}}>★ 4.9</div></div>
+              <div><div style={{fontSize:11,color:C.muted}}>Payouts</div><div style={{fontSize:14,fontWeight:800,color:stylistProfile?.stripe_onboarding_complete?C.green:C.orange}}>{stylistProfile?.stripe_onboarding_complete?'Ready':'Setup needed'}</div></div>
             </div>
           </div>
 
@@ -650,7 +663,7 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
           {jobs.map((m,i)=>(
             <div key={m.id||i} style={{...cardStyle,...flex('row','center','space-between'),marginBottom:12}}>
               <div><div style={{fontSize:15,fontWeight:700,color:C.text}}>{m.subcategory_id}</div><div style={{fontSize:12,color:C.muted}}>{String(m.status).replace('_',' ')}</div></div>
-              <div style={{textAlign:'right'}}><div style={{fontSize:20,fontWeight:800,color:C.green}}>${Number(m.final_price||m.estimated_price||0).toFixed(2)}</div>{['accepted','en_route','arrived','in_progress'].includes(m.status)&&<button onClick={()=>advance(m)} style={{...btn(C.secondary,C.white,{padding:'7px 10px',fontSize:10,marginTop:6})}}>{({accepted:'Start route',en_route:'Arrived',arrived:'Start service',in_progress:'Complete'} as any)[m.status]}</button>}</div>
+              <div style={{textAlign:'right'}}><div style={{fontSize:20,fontWeight:800,color:C.green}}>${Number(m.final_price||m.estimated_price||0).toFixed(2)}</div><div style={{fontSize:10,color:C.muted}}>Payment: {payments.find(p=>p.booking_id===m.id)?.status||'not authorized'}</div>{['accepted','en_route','arrived','in_progress'].includes(m.status)&&<button onClick={()=>advance(m)} style={{...btn(C.secondary,C.white,{padding:'7px 10px',fontSize:10,marginTop:6})}}>{({accepted:'Start route',en_route:'Arrived',arrived:'Start service',in_progress:'Complete & capture'} as any)[m.status]}</button>}</div>
             </div>
           ))}
         </div>
@@ -665,7 +678,7 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
           </div>
           <h3 style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:12}}>Payout Breakdown</h3>
           <div style={cardStyle}>
-            <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>Verified completed-service totals appear above. Net payouts, tips, and platform fees will appear only after booking-specific Stripe Connect settlement is activated.</div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>Only funds actually released to your connected payout account appear above. Pending authorizations and captured funds are shown on their bookings.</div>
           </div>
         </div>
       )}
@@ -674,7 +687,8 @@ const StylistDashboard=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userNa
         <div className="anim-tab" style={{padding:20,...flex('column','center','center'),minHeight:'60vh'}}>
           <div style={{width:80,height:80,borderRadius:20,background:`${C.secondary}12`,...flex('row','center','center'),fontSize:36,marginBottom:16}}>✂️</div>
           <div style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:4}}>{userName||'Stylist'}</div>
-          <div style={{fontSize:13,color:C.green,marginBottom:24}}>★ 4.9 Rating · 312 Bookings</div>
+          <div style={{fontSize:13,color:stylistProfile?.stripe_onboarding_complete?C.green:C.orange,marginBottom:16}}>{stylistProfile?.stripe_onboarding_complete?'Payout account ready':'Payout setup required'}</div>
+          <button onClick={openPayouts} style={{...btn(C.secondary,C.white,{marginBottom:16})}}>{stylistProfile?.stripe_onboarding_complete?'Update payout account':'Set up secure payouts'}</button>
           {['My Profile','Specialties & Licensing','Portfolio','Payout Settings','Studio Info','Help & Support'].map(item=>(
             <div key={item} style={{...cardStyle,width:'100%',marginBottom:8,...flex('row','center','space-between'),padding:'16px 20px',cursor:'pointer'}}>
               <span style={{fontSize:14,color:C.text}}>{item}</span><span style={{color:C.muted}}>→</span>

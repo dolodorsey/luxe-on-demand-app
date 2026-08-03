@@ -63,6 +63,14 @@ export const getAvailableRequests = async () => { const {data,error}=await supab
 export const setStylistDuty = async (onDuty:boolean,lat?:number,lng?:number) => { const {data,error}=await supabase.rpc('cs_set_on_duty',{p_on_duty:onDuty,p_lat:lat||null,p_lng:lng||null});if(error)throw error;return data; };
 export const acceptRequest = async (id:string) => { const {data,error}=await supabase.rpc('cs_accept_request',{p_booking_id:id});if(error)throw error;return data; };
 export const transitionBooking = async (id:string,status:string) => { const {data,error}=await supabase.rpc('cs_stylist_transition',{p_booking_id:id,p_status:status});if(error)throw error;return data; };
+export const paymentAction = async (action:'authorize'|'capture'|'cancel'|'connect_onboarding',bookingId='') => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Please sign in again');
+  const response = await fetch(`${supabaseUrl}/functions/v1/luxe-payments`, { method:'POST', headers:{ 'content-type':'application/json', authorization:`Bearer ${session.access_token}`, apikey:supabaseAnonKey }, body:JSON.stringify({action,booking_id:bookingId||'connect'}) });
+  const data = await response.json(); if(!response.ok) throw new Error(data.error||'Payment request failed'); return data;
+};
+export const getBookingPayments = async () => { const {data,error}=await supabase.from('cs_booking_payments').select('*').order('created_at',{ascending:false});if(error)throw error;return data||[]; };
+export const rateBooking = async (bookingId:string,rating:number,review='') => { const {data,error}=await supabase.rpc('cs_rate_booking',{p_booking_id:bookingId,p_rating:rating,p_review:review});if(error)throw error;return data; };
 
 export const getBookings = async (authUserId: string) => {
   const csUserId = await getCsUserId(authUserId);
