@@ -57,6 +57,11 @@ export default function ApplyPage() {
         <div style={{fontSize:30,fontWeight:300,color:"#fff",letterSpacing:"-0.02em"}}>Join Our Provider Network</div>
         <div style={{fontSize:14,color:"rgba(255,255,255,0.6)",marginTop:6}}>Premium mobile beauty & wellness professionals</div>
       </div>
+      <div style={{height:260,maxWidth:600,margin:"0 auto",overflow:"hidden",position:"relative",borderBottom:"1px solid #D4B87A"}}>
+        <img src="/brand/luxe-provider-process.png" alt="How to become a LUXE provider" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 10%",display:"block"}} />
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(26,10,46,.82) 100%)"}} />
+        <div style={{position:"absolute",left:20,right:20,bottom:14,color:"#fff",fontSize:13,letterSpacing:".08em"}}>APPLY · GET REVIEWED · SET AVAILABILITY</div>
+      </div>
       {step < 4 && (
         <div style={{maxWidth:600,margin:"0 auto",padding:"12px 24px"}}>
           <div style={{display:"flex",gap:4}}>

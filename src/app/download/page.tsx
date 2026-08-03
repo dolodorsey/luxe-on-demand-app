@@ -1,98 +1,29 @@
+import Link from "next/link";
+
 export const metadata = {
-  title: "Luxe On Demand - Android Download",
-  description: "Download the Luxe On Demand Android app directly.",
+  title: "LUXE On Demand — App Release Status",
+  description: "Official release status for the LUXE On Demand mobile apps.",
 };
 
 export default function DownloadPage() {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#0A0A0A",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "'DM Sans', sans-serif",
-      color: "#F5F0E8",
-      padding: "40px 20px",
-      textAlign: "center",
-    }}>
-
-      <div style={{ marginBottom: "32px" }}>
-        <div style={{
-          width: "80px", height: "80px",
-          background: "#D4B87A",
-          borderRadius: "20px",
-          margin: "0 auto 20px",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "36px"
-        }}>📱</div>
-        <h1 style={{ fontSize: "2.2rem", fontWeight: 800, margin: "0 0 8px", letterSpacing: "-0.02em" }}>
-          Luxe On Demand
-        </h1>
-        <p style={{ color: "#D4B87A", fontSize: "1rem", margin: 0 }}>
-          Elite luxury services, instantly.
-        </p>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%", maxWidth: "320px" }}>
-
-        <a
-          href="https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/apks/lod-release.apk"
-          download="lod-release.apk"
-          style={{
-            background: "#D4B87A",
-            color: "#0A0A0A",
-            padding: "18px 32px",
-            borderRadius: "12px",
-            fontWeight: 800,
-            fontSize: "1.05rem",
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-          }}
-        >
-          ⬇ Download for Android
-        </a>
-
-        <a
-          href="https://testflight.apple.com"
-          style={{
-            background: "transparent",
-            color: "#F5F0E8",
-            padding: "16px 32px",
-            borderRadius: "12px",
-            fontWeight: 600,
-            fontSize: "1rem",
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-            border: "1px solid rgba(245,240,232,0.2)",
-          }}
-        >
-           Download for iPhone (TestFlight)
-        </a>
-
-      </div>
-
-      <div style={{ marginTop: "40px", maxWidth: "300px" }}>
-        <p style={{ color: "rgba(245,240,232,0.4)", fontSize: "0.8rem", lineHeight: 1.6 }}>
-          <strong style={{ color: "rgba(245,240,232,0.7)" }}>Android:</strong> After download, open the APK file.
-          Enable <em>Install from Unknown Sources</em> in Settings if prompted.
-        </p>
-        <p style={{ color: "rgba(245,240,232,0.4)", fontSize: "0.8rem", lineHeight: 1.6, marginTop: "8px" }}>
-          <strong style={{ color: "rgba(245,240,232,0.7)" }}>iPhone:</strong> TestFlight link opens the App Store.
-          No Apple approval required — available immediately.
-        </p>
-      </div>
-
-      <p style={{ marginTop: "48px", color: "rgba(245,240,232,0.25)", fontSize: "0.75rem" }}>
-        The Kollective Hospitality Group · luxe-on-demand-app.vercel.app
-      </p>
-    </div>
+    <main style={{minHeight:"100vh",background:"radial-gradient(circle at top,#37231f,#090807 62%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",color:"#F8EEE8",padding:"32px 20px",textAlign:"center"}}>
+      <section style={{width:"100%",maxWidth:560,border:"1px solid rgba(212,184,122,.45)",borderRadius:28,overflow:"hidden",background:"rgba(10,8,7,.88)",boxShadow:"0 30px 90px rgba(0,0,0,.5)"}}>
+        <div style={{height:260,position:"relative",overflow:"hidden"}}>
+          <img src="/brand/luxe-provider-process.png" alt="LUXE On Demand" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 8%",display:"block"}}/>
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 35%,rgba(10,8,7,.96))"}}/>
+        </div>
+        <div style={{padding:"0 28px 34px",marginTop:-28,position:"relative"}}>
+          <div style={{fontSize:11,letterSpacing:".28em",color:"#D4B87A",fontWeight:800}}>OFFICIAL RELEASE STATUS</div>
+          <h1 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"clamp(32px,8vw,48px)",margin:"12px 0 10px"}}>Mobile apps are in review.</h1>
+          <p style={{color:"rgba(248,238,232,.72)",lineHeight:1.7,margin:"0 auto 24px",maxWidth:430}}>There is no public Android APK or active TestFlight invitation for this release. Signed download links will appear here only after platform verification.</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:24}}>
+            <div style={{padding:16,borderRadius:14,background:"rgba(255,255,255,.045)",border:"1px solid rgba(255,255,255,.08)"}}><strong style={{display:"block",color:"#D4B87A"}}>iPhone</strong><span style={{fontSize:13}}>Not yet released</span></div>
+            <div style={{padding:16,borderRadius:14,background:"rgba(255,255,255,.045)",border:"1px solid rgba(255,255,255,.08)"}}><strong style={{display:"block",color:"#D4B87A"}}>Android</strong><span style={{fontSize:13}}>Not yet released</span></div>
+          </div>
+          <Link href="/" style={{display:"inline-block",padding:"14px 24px",borderRadius:12,background:"linear-gradient(135deg,#D4B87A,#D69A78)",color:"#120d0a",fontWeight:800,textDecoration:"none"}}>Use LUXE on the web</Link>
+        </div>
+      </section>
+    </main>
   );
 }

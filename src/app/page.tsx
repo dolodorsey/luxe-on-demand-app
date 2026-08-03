@@ -110,27 +110,6 @@ const SERVICE_TAXONOMY=[
   ]},
 ];
 
-const REVIEWS=[
-  {text:'My braids came out absolutely perfect. She arrived in 30 minutes and my hair has never looked this good. LUXE is unmatched.',name:'Jasmine R.',plan:'Verified Client',stars:5},
-  {text:'I use LUXE for everything — nails, lashes, facials. One app for all my beauty needs. The stylists are elite.',name:'Destiny K.',plan:'Active Client',stars:5},
-  {text:'Got a fade at my apartment before a date. The barber was professional, clean, and fast. This app is a game-changer.',name:'Marcus T.',plan:'Repeat Client',stars:5},
-];
-
-const LUXE_STRIPE_PAYMENT_URL='https://buy.stripe.com/6oU28sb99gZy0TeeyddUY05';
-
-const STYLIST_HISTORY=[
-  {client:'Jasmine R.',service:'Braids',earned:150,time:'2:15 PM',rating:5},
-  {client:'Destiny K.',service:'Gel Nails',earned:55,time:'11:30 AM',rating:5},
-  {client:'Angela W.',service:'Full Glam',earned:120,time:'9:45 AM',rating:4},
-  {client:'Priya M.',service:'Silk Press',earned:85,time:'Yesterday',rating:5},
-];
-
-const CLIENT_HISTORY=[
-  {service:'Braids',stylist:'Jasmine R.',date:'Today, 2:15 PM',cost:150,status:'Completed'},
-  {service:'Gel Nails',stylist:'Nia W.',date:'Mar 15, 9:30 AM',cost:55,status:'Completed'},
-  {service:'Full Glam',stylist:'Destiny K.',date:'Feb 28, 7:45 PM',cost:120,status:'Completed'},
-];
-
 /* ─── Validation ─── */
 const isValidEmail=(e:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const passwordStrength=(p:string)=>{
@@ -138,15 +117,6 @@ const passwordStrength=(p:string)=>{
   let s=0;if(/[a-z]/.test(p))s++;if(/[A-Z]/.test(p))s++;if(/[0-9]/.test(p))s++;if(/[^a-zA-Z0-9]/.test(p))s++;
   if(s<=1)return{label:'Weak',color:C.orange,pct:40};if(s===2)return{label:'Fair',color:C.yellow,pct:60};
   if(s===3)return{label:'Good',color:C.accent,pct:80};return{label:'Strong',color:C.green,pct:100};
-};
-
-const openPaymentUrl=async(url:string)=>{
-  try{
-    const mod=await(Function('return import("@capacitor/browser")')());
-    await mod.Browser.open({url});
-  }catch{
-    window.open(url,'_blank');
-  }
 };
 
 /* ════════════════════════════════════════ */
@@ -306,9 +276,15 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
         <button onClick={onBook} style={{...btn(`linear-gradient(135deg, ${C.accent}, ${C.secondary})`),fontSize:17,padding:'16px 48px',boxShadow:`0 8px 30px ${C.accent}30`,borderRadius:16,border:`1px solid ${GOLD}30`}}>Book a Stylist</button>
       </section>
 
+      <section aria-label="LUXE services" style={{height:320,margin:'0 20px 28px',borderRadius:24,overflow:'hidden',position:'relative',border:`1px solid ${GOLD}55`,boxShadow:'0 22px 55px rgba(26,10,46,.25)'}}>
+        <img src="/brand/luxe-services.png" alt="LUXE On Demand beauty and wellness providers" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 24%',display:'block'}}/>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,transparent 50%,rgba(0,0,0,.76) 100%)'}}/>
+        <div style={{position:'absolute',left:20,right:20,bottom:18,color:'#fff',textAlign:'left'}}><div style={{fontSize:11,letterSpacing:2.4,color:GOLD_LIGHT,fontWeight:800}}>BEAUTY · WELLNESS · CONVENIENCE</div><div style={{fontSize:20,fontFamily:"'Cormorant Garamond',serif",fontWeight:700}}>A premium network, built around real bookings.</div></div>
+      </section>
+
       {/* Services Grid — gold trim divider */}
       <section style={{padding:'40px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
-        <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>292 Services, 13 Categories</h2>
+        <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>44 Services, 8 Categories</h2>
         <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Everything beauty in one place</p>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
           {SERVICE_TAXONOMY.map((cat,i)=>(
@@ -324,9 +300,9 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
       {/* Trust & Safety */}
       <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
         <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Trust & Safety Built In</h2>
-        <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Every stylist is licensed, verified & background checked</p>
+        <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Provider access is gated by review and verification</p>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-          {[{icon:'🛡️',title:'Licensed & Verified',desc:'Cosmetology license verified on file'},{icon:'⭐',title:'Portfolio Reviewed',desc:'Before & after photos required'},{icon:'📍',title:'Live Tracking',desc:'Real-time session tracking for safety'},{icon:'📞',title:'24/7 Support',desc:'Always available when you need us'}].map(c=>(
+          {[{icon:'🛡️',title:'Verification Gate',desc:'Only fully verified providers can go on duty'},{icon:'⭐',title:'Portfolio Review',desc:'Applications enter a private staff review queue'},{icon:'🔒',title:'Private Intake',desc:'Provider applications are not publicly readable'},{icon:'📍',title:'Lifecycle Controls',desc:'Accepted jobs move through real service statuses'}].map(c=>(
             <div key={c.title} style={{...cardStyle,textAlign:'center',padding:20}}>
               <div style={{fontSize:28,marginBottom:8}}>{c.icon}</div>
               <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>{c.title}</div>
@@ -336,25 +312,18 @@ const Landing=({T,onBook,onStylistPortal}:{T:typeof THEME_FEMALE;onBook:()=>void
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
-        <h2 style={{fontSize:24,fontWeight:700,textAlign:'center',color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>What People Say</h2>
-        <p style={{textAlign:'center',color:C.muted,fontSize:14,margin:'0 0 32px'}}>Real reviews from real clients</p>
-        {REVIEWS.map((r,i)=>(<div key={i} style={{...cardStyle,marginBottom:16}}><div style={{marginBottom:8,color:C.yellow}}>{'★'.repeat(r.stars)}</div><p style={{fontSize:14,color:C.gray,lineHeight:1.6,margin:'0 0 12px',fontStyle:'italic'}}>"{r.text}"</p><div style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</div><div style={{fontSize:11,color:C.muted}}>{r.plan}</div></div>))}
-      </section>
-
       {/* Become a Stylist */}
       <section style={{padding:'48px 24px',borderTop:`1.5px solid ${GOLD}25`,textAlign:'center',background:`radial-gradient(ellipse at 50% 100%,${C.accent}08 0%,transparent 60%)`}}>
         <div style={{fontSize:48,marginBottom:16}}>✂️</div>
         <h2 style={{fontSize:24,fontWeight:700,color:C.text,margin:'0 0 8px',fontFamily:"'Cormorant Garamond',serif"}}>Become a LUXE Stylist</h2>
-        <p style={{fontSize:14,color:C.gray,margin:'0 0 24px',maxWidth:320,marginLeft:'auto',marginRight:'auto',lineHeight:1.6}}>Earn on your schedule doing what you love. Set your own rates, build your clientele, and get paid instantly.</p>
+        <p style={{fontSize:14,color:C.gray,margin:'0 0 24px',maxWidth:320,marginLeft:'auto',marginRight:'auto',lineHeight:1.6}}>Apply to offer services through the LUXE network. Approval, identity, credentials, background check, and insurance verification are required before going on duty.</p>
         <button onClick={onStylistPortal} style={{...btn(C.secondary),fontSize:16,padding:'14px 40px',borderRadius:16}}>Apply Now</button>
       </section>
 
       {/* Stats */}
       <section style={{padding:'40px 24px',borderTop:`1.5px solid ${GOLD}25`}}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-          {[['44+','Services'],['4.9','App Rating'],['30 min','Avg Arrival'],['100%','Licensed']].map(([val,label])=>(
+          {[['44','Service options'],['8','Categories'],['Private','Applications'],['Required','Provider approval']].map(([val,label])=>(
             <div key={label} style={{textAlign:'center'}}><div style={{fontSize:24,fontWeight:900,color:C.text}}>{val}</div><div style={{fontSize:11,color:C.muted}}>{label}</div></div>
           ))}
         </div>
@@ -377,7 +346,6 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
   const[tab,setTab]=useState('home');
   const[selectedService,setSelectedService]=useState<any>(null);
   const[reqStep,setReqStep]=useState<string|null>(null);
-  const[eta,setEta]=useState(1800);
   const[notifOpen,setNotifOpen]=useState(false);
   const[serviceMode,setServiceMode]=useState<'mobile'|'in_studio'>('mobile');
   const[bookingHistory,setBookingHistory]=useState<any[]>([]);
@@ -385,14 +353,10 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
 
   useEffect(()=>{if(userId)getBookings(userId).then(setBookingHistory).catch(()=>{});},[userId]);
 
-  useEffect(()=>{if(reqStep!=='tracking')return;const t=setInterval(()=>setEta(p=>Math.max(0,p-1)),1000);return()=>clearInterval(t);},[reqStep]);
-
   const startRequest=(svc:any)=>{tap();setSelectedService(svc);setReqStep('confirm');};
 
   const dispatchStylist=async()=>{tap('Heavy');setReqStep('finding');try{let address=serviceMode==='mobile'?'Current GPS location':'';let lat:number|undefined,lng:number|undefined;if(serviceMode==='mobile'&&navigator.geolocation){try{const p:GeolocationPosition=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{timeout:8000}));lat=p.coords.latitude;lng=p.coords.longitude;address=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;}catch{}}await createBooking({client_auth_id:userId,subcategory_name:selectedService.name,service_mode:serviceMode,address,lat,lng});setBookingHistory(await getBookings(userId));setRequestError('');setReqStep('found');}catch(error:any){setRequestError(error.message||'Your booking could not be submitted');setReqStep('confirm');}};
-  const startTracking=()=>{setEta(1800);setReqStep('tracking');};
   const cancelRequest=()=>{setReqStep(null);setSelectedService(null);};
-  const formatEta=(s:number)=>`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
 
   /* ── Confirm Screen ── */
   if(reqStep==='confirm'&&selectedService) return(
@@ -459,7 +423,7 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
   );
 
   /* ── Tracking Screen ── */
-  if(reqStep==='tracking') return(
+  if(false && reqStep==='tracking') return(
     <div style={{minHeight:'100dvh',background:C.bg,...flex('column','stretch','flex-start')}}>
       <div style={{padding:'16px 20px',...flex('row','center','space-between')}}><button onClick={cancelRequest} style={{background:'transparent',border:'none',color:C.gray,fontSize:14,cursor:'pointer',fontWeight:600}}>← Back</button><div style={{fontSize:14,fontWeight:700,color:C.text}}>Live Tracking</div><div style={{width:50}}/></div>
       {/* Map */}
@@ -471,7 +435,7 @@ const ClientApp=({T,userName,userId,onBack}:{T:typeof THEME_FEMALE;userName:stri
         <div style={{position:'absolute',bottom:12,left:12,background:'rgba(255,255,255,0.9)',borderRadius:10,padding:'6px 10px',fontSize:11,color:C.gray,border:`1px solid ${C.border}`}}>🟢 Stylist en route</div>
       </div>
       {/* Timer */}
-      <div style={{textAlign:'center',padding:'20px 0'}}><div style={{fontSize:11,color:C.muted,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Estimated Arrival</div><div style={{fontSize:48,fontWeight:900,color:C.accent,fontFamily:"'DM Mono',monospace"}}>{formatEta(eta)}</div></div>
+      <div style={{textAlign:'center',padding:'20px 0'}}><div style={{fontSize:11,color:C.muted,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Estimated Arrival</div><div style={{fontSize:30,fontWeight:900,color:C.accent,fontFamily:"'DM Mono',monospace"}}>Pending</div></div>
       {/* Stylist Card */}
       <div style={{margin:'0 20px',...cardStyle,...flex('row','center','space-between')}}>
         <div style={flex('row','center','flex-start',12)}><div style={{width:48,height:48,borderRadius:14,background:`${C.accent}12`,...flex('row','center','center'),fontSize:24}}>✂️</div><div><div style={{fontSize:15,fontWeight:700,color:C.text}}>Jasmine R.</div><div style={{fontSize:12,color:C.green}}>En route · {selectedService?.name}</div></div></div>
