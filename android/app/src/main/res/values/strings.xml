@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Luxe On Demand</string>
+    <string name="title_activity_main">Luxe On Demand</string>
+    <string name="package_name">com.luxeondemand.app</string>
+    <string name="custom_url_scheme">com.luxeondemand.app</string>
+</resources>

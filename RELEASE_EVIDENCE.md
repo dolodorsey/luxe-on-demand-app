@@ -35,4 +35,6 @@
 
 - The application uses Next.js 16.2.12, React 19.2.8, Supabase JS 2.112.0, Stripe Elements, and Capacitor 8.5.0.
 - The production dependency audit reports zero vulnerabilities. Capacitor's CLI is development-only; its current upstream `xcode` helper has a moderate advisory that does not ship in the web or native runtime.
-- Production build and iOS Capacitor synchronization pass. The current packages require Node 22 for release tooling.
+- Production build, iOS Capacitor synchronization, and a code-signing-disabled iOS Simulator build pass (`** BUILD SUCCEEDED **`).
+- A complete Capacitor 8.5 Android project is now present and synchronized with the production web bundle and native plugins. Android compilation still requires an Android SDK and Java 21 on the release machine; neither is installed on this workstation.
+- The current packages require Node 22 for release tooling.
