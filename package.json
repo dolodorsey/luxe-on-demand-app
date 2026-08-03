@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "typecheck": "tsc --noEmit",
     "start": "next start",
-    "verify": "next build && npm audit --omit=dev --audit-level=critical",
+    "verify": "npm run typecheck && npm run build && npm audit --omit=dev --audit-level=critical",
     "ios:build": "npm run build && npx cap sync ios",
     "ios:open": "npx cap open ios",
     "ios:run": "npx cap run ios",
