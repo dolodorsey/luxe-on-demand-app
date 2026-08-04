@@ -1,0 +1,46 @@
+import { readFileSync } from 'node:fs'
+
+const route = readFileSync('src/app/api/health/route.ts', 'utf8')
+const migration = readFileSync(
+  'supabase/migrations/20260804133500_luxe_public_readiness_health.sql',
+  'utf8',
+)
+
+const requiredRouteTokens = [
+  "app: 'luxe-on-demand'",
+  "status: 'ok'",
+  "status: 'degraded'",
+  'luxe_get_public_readiness_snapshot',
+  "'Cache-Control': 'no-store, max-age=0'",
+  'HEALTH_TIMEOUT_MS',
+]
+
+for (const token of requiredRouteTokens) {
+  if (!route.includes(token)) {
+    throw new Error(`Health route is missing required contract token: ${token}`)
+  }
+}
+
+if (/service[_-]?role/i.test(route)) {
+  throw new Error('Health route must never use a Supabase service-role credential')
+}
+
+const requiredMigrationTokens = [
+  'create or replace function public.luxe_get_public_readiness_snapshot()',
+  "'launch_ready'",
+  "'supply_readiness_pct'",
+  "'live_dispatch_readiness_pct'",
+  'grant execute on function public.luxe_get_public_readiness_snapshot() to anon,authenticated,service_role',
+]
+
+for (const token of requiredMigrationTokens) {
+  if (!migration.includes(token)) {
+    throw new Error(`Readiness migration is missing required contract token: ${token}`)
+  }
+}
+
+if (/\b(phone|email|instagram|website|business_name)\b/.test(migration)) {
+  throw new Error('Public readiness migration must not expose candidate contact or business records')
+}
+
+console.log('LUXE health contract verified')
