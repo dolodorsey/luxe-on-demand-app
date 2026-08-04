@@ -1,0 +1,29 @@
+name: LUXE Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://aaaaaaaaaaaaaaaaaaaa.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-publishable-key-placeholder
+      NEXT_PUBLIC_SUPABASE_PROJECT_REF: aaaaaaaaaaaaaaaaaaaa
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Verify backend isolation, types, build, and critical dependency audit
+        run: npm run verify

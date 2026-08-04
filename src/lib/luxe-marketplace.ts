@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, supabasePublishableKey, supabaseUrl } from './supabase'
 
 export type LuxeCategory = {
   id: string
@@ -120,6 +120,25 @@ export async function createLuxeBooking(input: {
   return data as LuxeBooking
 }
 
+async function callLuxePayments(action: 'authorize' | 'cancel', bookingId: string) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData.session?.access_token
+  if (!token) throw new Error('Please sign in again.')
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/luxe-payments`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+      apikey: supabasePublishableKey,
+    },
+    body: JSON.stringify({ action, booking_id: bookingId }),
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(payload.error || 'LUXE payment processing is unavailable.')
+  return payload
+}
+
 export async function cancelLuxeBooking(bookingId: string, reason = 'Client canceled from app') {
   const { data, error } = await supabase.rpc('cs_client_cancel', {
     p_booking_id: bookingId,
@@ -127,22 +146,21 @@ export async function cancelLuxeBooking(bookingId: string, reason = 'Client canc
   })
   if (error) throw error
 
-  const { data: payment } = await supabase.from('cs_booking_payments').select('id,status').eq('booking_id', bookingId).maybeSingle()
+  const { data: payment } = await supabase
+    .from('cs_booking_payments')
+    .select('id,status')
+    .eq('booking_id', bookingId)
+    .maybeSingle()
+
   if (payment && !['captured','transferred','partially_refunded','refunded','canceled'].includes(payment.status)) {
-    const { data: sessionData } = await supabase.auth.getSession()
-    const token = sessionData.session?.access_token
-    if (token) {
-      const response = await fetch('https://dzlmtvodpyhetvektfuo.supabase.co/functions/v1/luxe-payments', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${token}`,
-          apikey: 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR',
-        },
-        body: JSON.stringify({ action:'cancel', booking_id:bookingId }),
-      })
-      const payload = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(payload.error || 'Booking canceled, but payment authorization needs attention.')
+    try {
+      await callLuxePayments('cancel', bookingId)
+    } catch (paymentError) {
+      throw new Error(
+        paymentError instanceof Error
+          ? `Booking canceled, but payment authorization needs attention: ${paymentError.message}`
+          : 'Booking canceled, but payment authorization needs attention.',
+      )
     }
   }
   return data as LuxeBooking
@@ -159,21 +177,7 @@ export async function rateLuxeBooking(bookingId: string, rating: number, review 
 }
 
 export async function authorizeLuxeBooking(bookingId: string) {
-  const { data: sessionData } = await supabase.auth.getSession()
-  const token = sessionData.session?.access_token
-  if (!token) throw new Error('Please sign in again.')
-  const response = await fetch('https://dzlmtvodpyhetvektfuo.supabase.co/functions/v1/luxe-payments', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`,
-      apikey: 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR',
-    },
-    body: JSON.stringify({ action:'authorize', booking_id:bookingId }),
-  })
-  const payload = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(payload.error || 'Payment authorization is unavailable.')
-  return payload
+  return callLuxePayments('authorize', bookingId)
 }
 
 export function luxeBookingStage(status: string) {

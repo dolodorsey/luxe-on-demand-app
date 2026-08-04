@@ -1,10 +1,10 @@
 'use client'
 
 import React, { FormEvent, useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseUrl } from '../lib/supabase'
 import type { LuxeService } from '../lib/luxe-marketplace'
 
-const FUNCTION_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co/functions/v1/luxe-provider-application'
+const FUNCTION_URL = `${supabaseUrl}/functions/v1/luxe-provider-application`
 
 export default function LuxeStylistApplication() {
   const [services,setServices] = useState<LuxeService[]>([])
