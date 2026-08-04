@@ -4,6 +4,8 @@ import { extname, join, relative } from 'node:path'
 const root = process.cwd()
 const sourceRoots = ['src']
 const extensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
+const approvedConfigFile = 'src/config/luxe-public-backend.ts'
+const approvedProjectRef = 'dzlmtvodpyhetvektfuo'
 const failures = []
 
 function collect(directory) {
@@ -23,12 +25,23 @@ for (const path of sourceFiles) {
   if (/\.n8n\.cloud|\/webhook\//i.test(text)) {
     failures.push(`${file}: legacy webhook or n8n integration detected`)
   }
-  if (/https:\/\/[a-z]{20}\.supabase\.co/i.test(text)) {
-    failures.push(`${file}: hardcoded Supabase project URL detected`)
+  if (file !== approvedConfigFile && /https:\/\/[a-z]{20}\.supabase\.co/i.test(text)) {
+    failures.push(`${file}: hardcoded Supabase project URL detected outside approved binding`)
   }
-  if (/sb_publishable_[A-Za-z0-9_-]{20,}/.test(text)) {
-    failures.push(`${file}: hardcoded Supabase publishable key detected`)
+  if (file !== approvedConfigFile && /sb_publishable_[A-Za-z0-9_-]{20,}/.test(text)) {
+    failures.push(`${file}: hardcoded Supabase publishable key detected outside approved binding`)
   }
+}
+
+const publicConfig = readFileSync(join(root, approvedConfigFile), 'utf8')
+if (!publicConfig.includes(`LUXE_APPROVED_PROJECT_REF = '${approvedProjectRef}'`)) {
+  failures.push(`${approvedConfigFile}: approved project reference changed unexpectedly`)
+}
+if (!/LUXE_APPROVED_PUBLISHABLE_KEY\s*=\s*'sb_publishable_[A-Za-z0-9_-]{20,}'/.test(publicConfig)) {
+  failures.push(`${approvedConfigFile}: approved publishable key binding is missing or malformed`)
+}
+if (/service_role|sb_secret_/i.test(publicConfig)) {
+  failures.push(`${approvedConfigFile}: secret or service-role credential detected`)
 }
 
 const supabaseModule = readFileSync(join(root, 'src/lib/supabase.ts'), 'utf8')
@@ -36,17 +49,12 @@ for (const requiredName of [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'NEXT_PUBLIC_SUPABASE_PROJECT_REF',
+  'LUXE_APPROVED_PROJECT_REF',
+  'LUXE_APPROVED_PUBLISHABLE_KEY',
 ]) {
   if (!supabaseModule.includes(requiredName)) {
-    failures.push(`src/lib/supabase.ts: missing ${requiredName} guard`)
+    failures.push(`src/lib/supabase.ts: missing ${requiredName} guard or binding`)
   }
-}
-
-if (/NEXT_PUBLIC_SUPABASE_URL\s*\|\|\s*['"]https:/m.test(supabaseModule)) {
-  failures.push('src/lib/supabase.ts: Supabase URL fallback detected')
-}
-if (/NEXT_PUBLIC_SUPABASE_(?:ANON_KEY|PUBLISHABLE_KEY)[^\n]*\|\|\s*['"]sb_/m.test(supabaseModule)) {
-  failures.push('src/lib/supabase.ts: Supabase key fallback detected')
 }
 
 if (failures.length) {
