@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./luxe-marketplace.css";
 
 export const metadata: Metadata = {
-  title: "LUXE On Demand — Premium Beauty & Cosmetic Services",
+  title: "LUXE On Demand — White-Glove Beauty Marketplace",
   description:
-    "Book elite stylists for hair, nails, lashes, makeup, skincare, massage, waxing and barber services — on-demand or scheduled. Mobile or in-studio.",
+    "Request hair, makeup, nails, lashes, skincare, bridal and beauty concierge services from vetted mobile and studio talent.",
   icons: { icon: "/favicon.ico" },
   openGraph: {
     title: "LUXE On Demand",
-    description: "Premium beauty services at your fingertips.",
+    description: "Beauty, delivered beautifully. Mobile or studio appointments matched with vetted talent.",
     type: "website",
   },
 };
@@ -18,15 +19,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#140d14",
+  themeColor: "#100b0d",
   viewportFit: "cover",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
