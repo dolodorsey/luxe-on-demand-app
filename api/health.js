@@ -1,31 +1,18 @@
-import {
-  LUXE_APPROVED_PUBLISHABLE_KEY,
-  LUXE_APPROVED_SUPABASE_URL,
-} from '../src/config/luxe-public-backend'
-
-type HealthRequest = {
-  method?: string
-}
-
-type HealthResponse = {
-  setHeader(name: string, value: string): void
-  status(code: number): HealthResponse
-  json(body: unknown): void
-  end(): void
-}
-
+const LUXE_APPROVED_SUPABASE_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
+const LUXE_APPROVED_PUBLISHABLE_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const HEALTH_TIMEOUT_MS = 5_000
 
-function configureHeaders(response: HealthResponse) {
+function configureHeaders(response) {
   response.setHeader('Cache-Control', 'no-store, max-age=0')
   response.setHeader('X-Content-Type-Options', 'nosniff')
   response.setHeader('Content-Type', 'application/json; charset=utf-8')
 }
 
-export default async function handler(request: HealthRequest, response: HealthResponse) {
+module.exports = async function handler(request, response) {
   configureHeaders(response)
 
-  if (!['GET', 'HEAD'].includes(request.method ?? 'GET')) {
+  const method = request.method || 'GET'
+  if (!['GET', 'HEAD'].includes(method)) {
     response.setHeader('Allow', 'GET, HEAD')
     response.status(405).json({
       status: 'error',
@@ -50,7 +37,6 @@ export default async function handler(request: HealthRequest, response: HealthRe
           'Content-Type': 'application/json',
         },
         body: '{}',
-        cache: 'no-store',
         signal: controller.signal,
       },
     )
@@ -76,8 +62,13 @@ export default async function handler(request: HealthRequest, response: HealthRe
       return
     }
 
-    const readiness = (await readinessResponse.json()) as Record<string, unknown>
-    const body = {
+    if (method === 'HEAD') {
+      response.status(200).end()
+      return
+    }
+
+    const readiness = await readinessResponse.json()
+    response.status(200).json({
       status: 'ok',
       app: 'luxe-on-demand',
       brand: 'LUXE ON DEMAND',
@@ -89,16 +80,8 @@ export default async function handler(request: HealthRequest, response: HealthRe
         readiness_rpc: 'reachable',
       },
       readiness,
-    }
-
-    if (request.method === 'HEAD') {
-      response.status(200).end()
-      return
-    }
-
-    response.status(200).json(body)
+    })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown health-check failure'
     response.status(503).json({
       status: 'degraded',
       app: 'luxe-on-demand',
@@ -110,7 +93,7 @@ export default async function handler(request: HealthRequest, response: HealthRe
         database: 'unavailable',
         readiness_rpc: 'unavailable',
       },
-      error: message,
+      error: error instanceof Error ? error.message : 'Unknown health-check failure',
     })
   } finally {
     clearTimeout(timeout)

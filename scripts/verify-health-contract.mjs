@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 
-const route = readFileSync('api/health.ts', 'utf8')
+const route = readFileSync('api/health.js', 'utf8')
 const migration = readFileSync(
   'supabase/migrations/20260804133500_luxe_public_readiness_health.sql',
   'utf8',
@@ -14,6 +14,8 @@ const requiredRouteTokens = [
   "'Cache-Control', 'no-store, max-age=0'",
   'HEALTH_TIMEOUT_MS',
   "['GET', 'HEAD']",
+  'module.exports = async function handler',
+  "https://dzlmtvodpyhetvektfuo.supabase.co",
 ]
 
 for (const token of requiredRouteTokens) {
@@ -22,8 +24,12 @@ for (const token of requiredRouteTokens) {
   }
 }
 
-if (/service[_-]?role/i.test(route)) {
-  throw new Error('Health function must never use a Supabase service-role credential')
+if (/service[_-]?role|sb_secret_/i.test(route)) {
+  throw new Error('Health function must never use a Supabase secret or service-role credential')
+}
+
+if (!/sb_publishable_[A-Za-z0-9_-]{20,}/.test(route)) {
+  throw new Error('Health function is missing the approved public Supabase binding')
 }
 
 const requiredMigrationTokens = [
