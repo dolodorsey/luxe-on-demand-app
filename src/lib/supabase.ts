@@ -1,20 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
+import {
+  LUXE_APPROVED_PROJECT_REF,
+  LUXE_APPROVED_PUBLISHABLE_KEY,
+  LUXE_APPROVED_SUPABASE_URL,
+} from '../config/luxe-public-backend'
 
-function requirePublicEnv(name: string, value: string | undefined) {
-  const normalized = value?.trim()
-  if (!normalized) throw new Error(`Missing required LUXE environment variable: ${name}`)
-  return normalized
-}
+export const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || LUXE_APPROVED_SUPABASE_URL
 
-export const supabaseUrl = requirePublicEnv(
-  'NEXT_PUBLIC_SUPABASE_URL',
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-)
-
-export const supabasePublishableKey = requirePublicEnv(
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-)
+export const supabasePublishableKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+  LUXE_APPROVED_PUBLISHABLE_KEY
 
 const parsedSupabaseUrl = new URL(supabaseUrl)
 if (parsedSupabaseUrl.protocol !== 'https:' || !parsedSupabaseUrl.hostname.endsWith('.supabase.co')) {
@@ -22,8 +19,9 @@ if (parsedSupabaseUrl.protocol !== 'https:' || !parsedSupabaseUrl.hostname.endsW
 }
 
 const connectedProjectRef = parsedSupabaseUrl.hostname.split('.')[0]
-const approvedProjectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim()
-if (approvedProjectRef && connectedProjectRef !== approvedProjectRef) {
+const approvedProjectRef =
+  process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim() || LUXE_APPROVED_PROJECT_REF
+if (connectedProjectRef !== approvedProjectRef) {
   throw new Error(`LUXE backend mismatch: expected ${approvedProjectRef}, received ${connectedProjectRef}`)
 }
 
