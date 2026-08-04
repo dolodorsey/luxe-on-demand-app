@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 
-const route = readFileSync('src/app/api/health/route.ts', 'utf8')
+const route = readFileSync('api/health.ts', 'utf8')
 const migration = readFileSync(
   'supabase/migrations/20260804133500_luxe_public_readiness_health.sql',
   'utf8',
@@ -11,18 +11,19 @@ const requiredRouteTokens = [
   "status: 'ok'",
   "status: 'degraded'",
   'luxe_get_public_readiness_snapshot',
-  "'Cache-Control': 'no-store, max-age=0'",
+  "'Cache-Control', 'no-store, max-age=0'",
   'HEALTH_TIMEOUT_MS',
+  "['GET', 'HEAD']",
 ]
 
 for (const token of requiredRouteTokens) {
   if (!route.includes(token)) {
-    throw new Error(`Health route is missing required contract token: ${token}`)
+    throw new Error(`Health function is missing required contract token: ${token}`)
   }
 }
 
 if (/service[_-]?role/i.test(route)) {
-  throw new Error('Health route must never use a Supabase service-role credential')
+  throw new Error('Health function must never use a Supabase service-role credential')
 }
 
 const requiredMigrationTokens = [
