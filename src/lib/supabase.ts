@@ -12,6 +12,8 @@ export const supabasePublishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
   LUXE_APPROVED_PUBLISHABLE_KEY
+export const LUXE_APP_URL = 'https://luxe-on-demand-app.vercel.app';
+export const LUXE_CONFIRM_URL = `${LUXE_APP_URL}/auth/confirm`;
 
 const parsedSupabaseUrl = new URL(supabaseUrl)
 if (parsedSupabaseUrl.protocol !== 'https:' || !parsedSupabaseUrl.hostname.endsWith('.supabase.co')) {
@@ -42,11 +44,16 @@ export const signUp = async (
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName, role, app: 'luxe' } },
+    options: { emailRedirectTo: LUXE_CONFIRM_URL, data: { full_name: fullName, role, app: 'luxe' } },
   })
   if (error) throw error
   return data
 }
+
+export const resendConfirmation = async (email: string) => {
+  const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: LUXE_CONFIRM_URL } });
+  if (error) throw error;
+};
 
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
