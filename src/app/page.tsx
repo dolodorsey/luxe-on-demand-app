@@ -1,5 +1,5 @@
-import LuxeMarketplaceApp from '../components/LuxeMarketplaceApp'
+import LuxeMobilityApp from '../components/LuxeMobilityApp'
 
 export default function HomePage() {
-  return <LuxeMarketplaceApp />
+  return <LuxeMobilityApp />
 }
