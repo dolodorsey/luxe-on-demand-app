@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getMobilitySession, luxeMobility } from '../lib/luxe-mobility'
 import '../app/luxe-driver-application.css'
+import '../app/luxe-driver-review.css'
 
 type CheckStatus='pending'|'verified'|'rejected'
 type Application={
