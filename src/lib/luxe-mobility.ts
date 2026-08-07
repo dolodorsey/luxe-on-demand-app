@@ -2,12 +2,12 @@
 
 import { createClient } from '@supabase/supabase-js'
 import {
-  LUXE_APPROVED_PUBLISHABLE_KEY,
-  LUXE_APPROVED_SUPABASE_URL,
+  LUXE_MOBILITY_PUBLISHABLE_KEY,
+  LUXE_MOBILITY_SUPABASE_URL,
   LUXE_BACKEND_MODE,
-} from '../config/luxe-public-backend'
+} from '../config/luxe-mobility-backend'
 
-export const luxeMobility = createClient(LUXE_APPROVED_SUPABASE_URL, LUXE_APPROVED_PUBLISHABLE_KEY)
+export const luxeMobility = createClient(LUXE_MOBILITY_SUPABASE_URL, LUXE_MOBILITY_PUBLISHABLE_KEY)
 export { LUXE_BACKEND_MODE }
 
 export type VehicleClass = {
