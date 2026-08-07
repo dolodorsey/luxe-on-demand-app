@@ -1,6 +1,6 @@
-// Controlled QA binding for the mobility closure branch.
-// This must be replaced by a dedicated LUXE Supabase project before production promotion.
-export const LUXE_MOBILITY_PROJECT_REF = 'ofjsmkwasvztxjdzjvvf'
+// LUXE shares the physical Supabase project used by ON CALL, while remaining logically isolated under the lm_* namespace.
+// ON CALL continues to use oc_* tables/functions; LUXE mobility uses lm_* tables/functions.
+export const LUXE_MOBILITY_PROJECT_REF = 'wfkohcwxxsrhcxhepfql'
 export const LUXE_MOBILITY_SUPABASE_URL = `https://${LUXE_MOBILITY_PROJECT_REF}.supabase.co`
-export const LUXE_MOBILITY_PUBLISHABLE_KEY = 'sb_publishable_kSWX1jfcv21s0a3EdFZ2TQ_Wy7oNA8r'
-export const LUXE_BACKEND_MODE = 'controlled-staging' as const
+export const LUXE_MOBILITY_PUBLISHABLE_KEY = 'sb_publishable_zKej0f4ql6VSR9rtHXaU0w_0yhVNAGL'
+export const LUXE_BACKEND_MODE = 'shared-on-call-project' as const
