@@ -24,7 +24,8 @@ Deno.serve(async(req)=>{
   return new Response(JSON.stringify({
     status:ok?'ok':'degraded',
     app:'LUXE Mobility',
-    backend:'controlled-staging',
+    backend:'shared-on-call-project',
+    project_ref:'wfkohcwxxsrhcxhepfql',
     database:ok?'reachable':'unreachable',
     vehicle_classes:classes.count??null,
     on_duty_drivers:drivers.count??null,
