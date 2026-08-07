@@ -4,7 +4,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2.112.0'
 const cors={
   'Access-Control-Allow-Origin':'*',
   'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type',
-  'Content-Type':'application/json',
+  'Access-Control-Allow-Methods':'POST, OPTIONS',
+  'Content-Type':'application/json'
 }
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:cors})
 
@@ -15,9 +16,9 @@ Deno.serve(async(req)=>{
   const url=Deno.env.get('SUPABASE_URL')
   const anon=Deno.env.get('SUPABASE_ANON_KEY')
   const serviceRole=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const stripeSecret=Deno.env.get('LUXE_MOBILITY_STRIPE_SECRET_KEY')
+  const stripeSecret=Deno.env.get('LUXE_MOBILITY_STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_SECRET_KEY')
   if(!url||!anon||!serviceRole)return json({error:'LUXE mobility backend is not configured.'},503)
-  if(!stripeSecret)return json({error:'LUXE mobility payments are not configured on this environment.'},503)
+  if(!stripeSecret)return json({error:'Shared ON CALL/LUXE Stripe runtime is not configured.'},503)
 
   const authorization=req.headers.get('Authorization')||''
   const userClient=createClient(url,anon,{global:{headers:{Authorization:authorization}},auth:{persistSession:false,autoRefreshToken:false}})
@@ -35,8 +36,8 @@ Deno.serve(async(req)=>{
   if(!profile)return json({error:'Active LUXE profile required.'},403)
 
   if(action==='authorize'){
-    const {data:ride,error:rideError}=await admin.from('lm_rides').select('id,rider_profile_id,driver_id,status,quoted_fare,vehicle_class_id').eq('id',rideId).maybeSingle()
-    if(rideError||!ride)return json({error:'Ride not found.'},404)
+    const {data:ride}=await admin.from('lm_rides').select('id,rider_profile_id,driver_id,status,quoted_fare,vehicle_class_id').eq('id',rideId).maybeSingle()
+    if(!ride)return json({error:'Ride not found.'},404)
     if(ride.rider_profile_id!==profile.id)return json({error:'Only the rider can authorize this fare.'},403)
     if(ride.status!=='accepted'||!ride.driver_id)return json({error:'A driver must accept before fare authorization.'},409)
 
@@ -49,15 +50,24 @@ Deno.serve(async(req)=>{
       intent=await stripe.paymentIntents.retrieve(existing.data.stripe_payment_intent_id)
     }else{
       intent=await stripe.paymentIntents.create({
-        amount,currency:'usd',capture_method:'manual',automatic_payment_methods:{enabled:true},
-        metadata:{app:'luxe_mobility',ride_id:rideId,vehicle_class_id:ride.vehicle_class_id},
+        amount,
+        currency:'usd',
+        capture_method:'manual',
+        automatic_payment_methods:{enabled:true,allow_redirects:'never'},
+        description:`LUXE Mobility — ${ride.vehicle_class_id}`,
+        metadata:{app:'luxe_mobility',brand:'LUXE',ride_id:rideId,vehicle_class_id:ride.vehicle_class_id}
       },{idempotencyKey:`luxe-mobility-authorize-${rideId}`})
     }
 
     const {data:payment,error:paymentError}=await admin.from('lm_payments').upsert({
-      ride_id:rideId,rider_profile_id:profile.id,amount_authorized:amount,currency:'usd',
-      stripe_payment_intent_id:intent.id,status:intent.status==='requires_capture'?'authorized':'pending',
-      authorized_at:intent.status==='requires_capture'?new Date().toISOString():null,updated_at:new Date().toISOString(),
+      ride_id:rideId,
+      rider_profile_id:profile.id,
+      amount_authorized:amount,
+      currency:'usd',
+      stripe_payment_intent_id:intent.id,
+      status:intent.status==='requires_capture'?'authorized':'pending',
+      authorized_at:intent.status==='requires_capture'?new Date().toISOString():null,
+      updated_at:new Date().toISOString()
     },{onConflict:'ride_id'}).select('id').single()
     if(paymentError)return json({error:'Payment ledger update failed.'},500)
     return json({paymentId:payment.id,clientSecret:intent.client_secret,amount,status:intent.status})
@@ -82,8 +92,8 @@ Deno.serve(async(req)=>{
     if(!ride||ride.driver_id!==driver.id||ride.status!=='completed')return json({error:'Completed assigned ride required.'},409)
     const {data:payment}=await admin.from('lm_payments').select('*').eq('ride_id',rideId).maybeSingle()
     if(!payment?.stripe_payment_intent_id||payment.status!=='authorized')return json({error:'Authorized payment required.'},409)
-    const intent=await stripe.paymentIntents.capture(payment.stripe_payment_intent_id)
-    await admin.from('lm_payments').update({status:'captured',amount_captured:intent.amount_received,captured_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',payment.id)
+    const intent=await stripe.paymentIntents.capture(payment.stripe_payment_intent_id,{}, {idempotencyKey:`luxe-mobility-capture-${payment.id}`})
+    await admin.from('lm_payments').update({status:intent.status==='succeeded'?'captured':payment.status,amount_captured:intent.amount_received,captured_at:intent.status==='succeeded'?new Date().toISOString():null,updated_at:new Date().toISOString()}).eq('id',payment.id)
     return json({status:intent.status,amountCaptured:intent.amount_received})
   }
 
