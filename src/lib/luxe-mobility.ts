@@ -43,10 +43,21 @@ export type LuxeRide = {
   created_at:string
 }
 
-export type LuxeRoute = {
-  distanceMiles:number
-  durationMinutes:number
-  source:string
+export type LuxeRoute = { distanceMiles:number; durationMinutes:number; source:string }
+
+export type LuxeDriverStatus = {
+  id:string
+  approval_status:'pending'|'approved'|'suspended'|'rejected'
+  on_duty:boolean
+  vehicle_class_id:string|null
+  vehicle_make:string|null
+  vehicle_model:string|null
+  vehicle_color:string|null
+  vehicle_plate:string|null
+  stripe_account_id:string|null
+  payouts_enabled:boolean
+  rating:number
+  completed_rides:number
 }
 
 export async function loadVehicleClasses() {
@@ -98,29 +109,16 @@ export async function computeRoute(origin:string,destination:string) {
 }
 
 export async function quoteRide(vehicleClassId:string,distanceMiles:number,durationMinutes:number) {
-  const {data,error}=await luxeMobility.rpc('lm_quote_fare',{
-    p_vehicle_class_id:vehicleClassId,p_distance_miles:distanceMiles,p_duration_minutes:durationMinutes,
-  })
+  const {data,error}=await luxeMobility.rpc('lm_quote_fare',{p_vehicle_class_id:vehicleClassId,p_distance_miles:distanceMiles,p_duration_minutes:durationMinutes})
   if(error) throw error
   return Number(data)
 }
 
-export async function requestRide(input:{
-  vehicleClassId:string
-  pickup:string
-  destination:string
-  distanceMiles:number
-  durationMinutes:number
-  scheduledAt?:string|null
-}) {
+export async function requestRide(input:{vehicleClassId:string;pickup:string;destination:string;distanceMiles:number;durationMinutes:number;scheduledAt?:string|null}) {
   const {data,error}=await luxeMobility.rpc('lm_request_ride',{
-    p_vehicle_class_id:input.vehicleClassId,
-    p_pickup_address:input.pickup,
-    p_destination_address:input.destination,
-    p_distance_miles:input.distanceMiles,
-    p_duration_minutes:input.durationMinutes,
-    p_pickup_lat:null,p_pickup_lng:null,p_destination_lat:null,p_destination_lng:null,
-    p_scheduled_at:input.scheduledAt||null,
+    p_vehicle_class_id:input.vehicleClassId,p_pickup_address:input.pickup,p_destination_address:input.destination,
+    p_distance_miles:input.distanceMiles,p_duration_minutes:input.durationMinutes,
+    p_pickup_lat:null,p_pickup_lng:null,p_destination_lat:null,p_destination_lng:null,p_scheduled_at:input.scheduledAt||null,
   })
   if(error) throw error
   return data as LuxeRide
@@ -160,6 +158,25 @@ export async function transitionRide(rideId:string,status:'en_route'|'arrived'|'
   const {data,error}=await luxeMobility.rpc('lm_driver_transition',{p_ride_id:rideId,p_status:status})
   if(error) throw error
   return data as LuxeRide
+}
+
+export async function loadDriverStatus() {
+  const {data,error}=await luxeMobility.rpc('lm_driver_status')
+  if(error) throw error
+  return data as LuxeDriverStatus
+}
+
+export async function setDriverDuty(onDuty:boolean) {
+  const {data,error}=await luxeMobility.rpc('lm_set_driver_duty',{p_on_duty:onDuty})
+  if(error) throw error
+  return data as LuxeDriverStatus
+}
+
+export async function startDriverPayoutOnboarding() {
+  const {data,error}=await luxeMobility.functions.invoke('luxe-mobility-connect-onboarding',{body:{}})
+  if(error) throw error
+  if(!data?.url)throw new Error(data?.error||'Payout onboarding link was not created.')
+  return data.url as string
 }
 
 export async function authorizeRidePayment(rideId:string) {
