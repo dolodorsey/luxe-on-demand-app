@@ -1,92 +1,62 @@
 # LUXE Mobility Closure Evidence
 
-Status: YELLOW — mobility base built and controlled backend lifecycle proven; dedicated production backend and live money/real-driver proof still required.
+Status: YELLOW — mobility base built, controlled lifecycle proven, and the user-approved shared production backend is established. Live routing, Stripe configuration, real driver supply, and a production ride proof remain.
 
 ## Canonical product direction
 
-LUXE is now being closed as a premium mobility product, not a cosmetic-services marketplace. The archived beauty implementation is preserved separately and has not been deleted.
+LUXE is being closed as a premium mobility product, not a cosmetic-services marketplace. The archived beauty implementation is preserved separately and has not been deleted.
+
+## Shared physical backend, separate logical products
+
+LUXE mobility now shares the physical Supabase project used by ON CALL: `wfkohcwxxsrhcxhepfql` (`KOLLECTIVE BOH`). This is intentional and user-approved.
+
+The brands remain logically isolated:
+- ON CALL uses the `oc_*` namespace and `oc-*` Edge Functions.
+- LUXE mobility uses the `lm_*` namespace and `luxe-mobility-*` Edge Functions.
+
+No LUXE mobility table, RPC, or Edge Function reuses ON CALL's business-domain tables. Sharing is infrastructure only, not brand/data-model consolidation.
+
+The shared project currently contains 14 `oc_*` tables and 7 `lm_*` tables. LUXE has three seeded vehicle classes and no fabricated production profiles, drivers, or rides.
 
 ## Backend contract established
 
-The closure branch contains a project-portable mobility schema under `supabase/migrations/20260807161000_luxe_mobility_core.sql` plus driver runtime support under `20260807162000_luxe_mobility_driver_runtime.sql`.
+The closure branch contains a portable mobility schema under `supabase/migrations/20260807161000_luxe_mobility_core.sql` plus driver runtime support under `20260807162000_luxe_mobility_driver_runtime.sql`.
 
-Core records include:
-- rider/driver profiles
-- vehicle classes
-- verified driver supply and on-duty state
-- rides
-- immutable ride events
-- payment ledger
-- ratings
+Core records include rider/driver profiles, vehicle classes, verified driver supply and duty state, rides, immutable ride events, payment ledger, and ratings.
 
-Core server functions cover:
-- rider profile onboarding
-- fare quoting
-- supply-gated ride request
-- available driver offers
-- atomic driver acceptance
-- ordered trip transitions
-- rider cancellation
-- rating
-- active driver trips
+Server functions cover rider onboarding, fare quoting, supply-gated ride requests, driver offers, atomic acceptance, ordered trip transitions, cancellation, rating, and active-driver trip retrieval. The ride request path fails closed when no approved, on-duty, payout-ready driver exists for the requested class.
 
-The request path fails closed when no approved, on-duty, payout-ready driver exists for the requested vehicle class.
+RLS is enabled on the `lm_*` tables. Direct protected writes are blocked for browser clients; authenticated app actions use ownership-checked mobility RPCs or server-side Edge Functions. `lm_drivers` and `lm_ride_events` intentionally have no browser read policies because those records are server/RPC controlled.
 
-## Controlled staging backend
+## LUXE mobility Edge Functions in the shared project
 
-Because a dedicated paid LUXE Supabase project has not yet been authorized, the closure branch is bound only to `MCP Gateway Enterprise Staging` (`ofjsmkwasvztxjdzjvvf`) for controlled QA. This is not the intended production backend and must not be promoted as canonical production infrastructure.
+The following functions are ACTIVE in `wfkohcwxxsrhcxhepfql`:
+- `luxe-mobility-payments` — JWT required
+- `luxe-mobility-stripe-webhook` — signed Stripe webhook endpoint
+- `luxe-mobility-health` — public bounded health endpoint
 
-The existing beauty implementation keeps its old Gateway binding so archived routes can still compile during migration. Mobility code uses a separate staging binding.
+The payment function fails closed when `LUXE_MOBILITY_STRIPE_SECRET_KEY` is absent. The webhook fails closed when the LUXE mobility Stripe secret or webhook signing secret is absent.
 
 ## Controlled lifecycle proof executed
 
-A temporary QA rider and QA driver were created in staging with no external notifications and no real payment method.
+Before the shared-backend production binding, a temporary QA rider and QA driver were created in enterprise staging with no external notifications and no real payment method.
 
-The controlled trip test produced ride ID `8081078e-3f66-4f46-aa1b-14281348f07f` with:
-- class: `luxe_black`
-- pickup: `123 Peachtree St NE, Atlanta, GA`
-- destination: `6000 N Terminal Pkwy, Atlanta, GA`
-- route: 12.4 miles / 28 minutes
-- server quote: `$57.50`
-- request status: `matching`
-- atomic driver acceptance: passed
-- controlled payment-ledger authorization: 5,750 cents
-- ordered states: `en_route → arrived → in_progress → completed`
-- completed final fare: `$57.50`
+The controlled trip test produced ride ID `8081078e-3f66-4f46-aa1b-14281348f07f` with class `luxe_black`, pickup `123 Peachtree St NE, Atlanta, GA`, destination `6000 N Terminal Pkwy, Atlanta, GA`, route 12.4 miles / 28 minutes, server quote `$57.50`, atomic driver acceptance, controlled 5,750-cent payment-ledger authorization, and ordered `en_route → arrived → in_progress → completed` transitions. The completed fare remained `$57.50`.
 
-The event ledger recorded `ride_requested`, `driver_accepted`, `en_route`, `arrived`, `in_progress`, and `completed` in order.
+The event ledger recorded `ride_requested`, `driver_accepted`, `en_route`, `arrived`, `in_progress`, and `completed` in order. All QA rider/driver/ride/payment/event records were deleted afterward. This proves the database lifecycle only and is not represented as a real customer ride or Stripe transaction.
 
-All QA rider/driver/ride/payment/event records were deleted after evidence collection. Post-cleanup verification returned zero QA rides and zero QA profiles remaining.
+## Mobility application surface
 
-This proves the database lifecycle only. It is not represented as a real customer ride or real Stripe transaction.
+The closure branch homepage now routes authenticated identities to the LUXE rider or driver experience. The mobility surface includes confirmation-safe rider authentication, pickup/destination, vehicle-class selection, server fare quotes, ride requests, active trip state, payment authorization entry, cancellation, history, rating, driver offers, driver acceptance, and ordered trip-state controls.
 
-## Mobility customer surface
-
-`src/components/LuxeMobilityApp.tsx` replaces the beauty marketplace on the closure branch homepage and provides:
-- confirmation-safe rider authentication
-- pickup and destination
-- explicit route QA metrics
-- vehicle class selection
-- server fare quote
-- ride request
-- active trip state
-- fare authorization entry point
-- cancellation
-- ride history
-- rating
-- driver offer surface
-
-The route-distance/minutes fields are deliberately visible in closure QA because a production routing provider has not yet been connected. They must be replaced by live routing/geocoding before production GREEN.
+A routing adapter is implemented, but production routing credentials still need verification before route distance/duration can be treated as live-production evidence.
 
 ## Build proof
 
-Vercel preview deployment `dpl_GcyjHpCAeAvHUobPgyYrPo1m9taC` for branch `agent/luxe-mobility-closure` compiled successfully with Next.js 16.2.12 and finished TypeScript/static generation successfully. The deployment reached READY.
+The LUXE closure branch is bound to `wfkohcwxxsrhcxhepfql` through `src/config/luxe-mobility-backend.ts` with backend mode `shared-on-call-project`.
+
+Vercel preview deployment `dpl_6QEyhMTeX7esJoEWaRzaDyYcfB1F` for commit `759a765a3e43fe14bff1740e80c2ff158763c2fb` reached READY after the shared-backend switch. A subsequent health-reporting commit `bd3371ee258b02c98c63a5d79a279870fff4d1c2` also deployed on the same closure branch.
 
 ## Not yet claimed complete
 
-LUXE is not GREEN until:
-1. a dedicated LUXE Supabase production project is explicitly authorized and the mobility migrations are applied there;
-2. live routing/geocoding replaces the closure QA route inputs;
-3. mobility Stripe authorization/capture/webhook flow is deployed against rotated live credentials;
-4. at least one approved real or controlled driver account and rider account complete the full production path;
-5. the production mobility domain is pointed to the verified release and all old beauty-brand LUXE routes are retired or reassigned without data loss.
+LUXE is not GREEN until live routing/geocoding is credentialed and verified, LUXE mobility Stripe authorization/capture/webhook credentials are configured and proven, at least one approved real or controlled production driver and rider complete the full release path, and the verified mobility build replaces the legacy beauty implementation on the production LUXE surface without data loss.
