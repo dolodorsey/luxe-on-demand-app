@@ -1,5 +1,5 @@
-import LuxeMobilityApp from '../components/LuxeMobilityApp'
+import LuxeMobilityEntry from '../components/LuxeMobilityEntry'
 
 export default function HomePage() {
-  return <LuxeMobilityApp />
+  return <LuxeMobilityEntry />
 }
