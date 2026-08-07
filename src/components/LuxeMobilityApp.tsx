@@ -8,6 +8,7 @@ import {
   acceptRide,
   authorizeRidePayment,
   cancelRide,
+  computeRoute,
   ensureRiderProfile,
   getMobilitySession,
   loadDriverOffers,
@@ -20,7 +21,6 @@ import {
   requestRide,
   signInMobility,
   signUpMobility,
-  transitionRide,
   type LuxeRide,
   type VehicleClass,
 } from '../lib/luxe-mobility'
@@ -67,8 +67,10 @@ export default function LuxeMobilityApp(){
   const [pickup,setPickup]=useState('')
   const [destination,setDestination]=useState('')
   const [vehicleId,setVehicleId]=useState('luxe_black')
-  const [distance,setDistance]=useState(8)
-  const [minutes,setMinutes]=useState(22)
+  const [distance,setDistance]=useState(0)
+  const [minutes,setMinutes]=useState(0)
+  const [routeSource,setRouteSource]=useState('')
+  const [routeBusy,setRouteBusy]=useState(false)
   const [scheduledAt,setScheduledAt]=useState('')
   const [quote,setQuote]=useState<number|null>(null)
   const [busy,setBusy]=useState(false)
@@ -107,6 +109,10 @@ export default function LuxeMobilityApp(){
   },[])
 
   useEffect(()=>{
+    setDistance(0);setMinutes(0);setRouteSource('');setQuote(null)
+  },[pickup,destination])
+
+  useEffect(()=>{
     let active=true
     if(!vehicleId||distance<=0||minutes<=0){setQuote(null);return}
     quoteRide(vehicleId,distance,minutes).then(value=>{if(active)setQuote(value)}).catch(()=>{if(active)setQuote(null)})
@@ -128,11 +134,31 @@ export default function LuxeMobilityApp(){
     finally{setAuthBusy(false)}
   }
 
+  const calculateRoute=async()=>{
+    if(routeBusy)return
+    setRouteBusy(true);setMessage('')
+    try{
+      if(!pickup.trim()||!destination.trim())throw new Error('Enter pickup and destination.')
+      const route=await computeRoute(pickup.trim(),destination.trim())
+      setDistance(route.distanceMiles);setMinutes(route.durationMinutes);setRouteSource(route.source)
+    }catch(error){
+      setDistance(0);setMinutes(0);setRouteSource('');setQuote(null)
+      setMessage(error instanceof Error?error.message:'Route calculation unavailable')
+    }finally{setRouteBusy(false)}
+  }
+
   const submitRide=async()=>{
     if(busy)return;setBusy(true);setMessage('')
     try{
       if(!pickup.trim()||!destination.trim())throw new Error('Enter pickup and destination.')
-      const ride=await requestRide({vehicleClassId:vehicleId,pickup:pickup.trim(),destination:destination.trim(),distanceMiles:distance,durationMinutes:minutes,scheduledAt:scheduledAt?new Date(scheduledAt).toISOString():null})
+      let routeDistance=distance
+      let routeMinutes=minutes
+      if(routeDistance<=0||routeMinutes<=0){
+        const route=await computeRoute(pickup.trim(),destination.trim())
+        routeDistance=route.distanceMiles;routeMinutes=route.durationMinutes
+        setDistance(routeDistance);setMinutes(routeMinutes);setRouteSource(route.source)
+      }
+      const ride=await requestRide({vehicleClassId:vehicleId,pickup:pickup.trim(),destination:destination.trim(),distanceMiles:routeDistance,durationMinutes:routeMinutes,scheduledAt:scheduledAt?new Date(scheduledAt).toISOString():null})
       setMessage('Ride request created. Matching with a verified LUXE driver.');setRides(current=>[ride,...current])
     }catch(error){setMessage(error instanceof Error?error.message:'Ride request failed')}
     finally{setBusy(false)}
@@ -140,7 +166,7 @@ export default function LuxeMobilityApp(){
 
   const startPayment=async(ride:LuxeRide)=>{
     try{
-      if(!stripePromise)throw new Error('Stripe publishable configuration is not available on this preview.')
+      if(!stripePromise)throw new Error('Stripe publishable configuration is not available on this release.')
       const result=await authorizeRidePayment(ride.id);setPayment({rideId:ride.id,clientSecret:result.clientSecret})
     }catch(error){setMessage(error instanceof Error?error.message:'Payment authorization unavailable')}
   }
@@ -149,20 +175,28 @@ export default function LuxeMobilityApp(){
 
   if(!session)return <main className="lm-auth">
     <section className="lm-auth-visual"><div className="lm-wordmark">LUXE<small>ON DEMAND</small></div><div className="lm-road"><i/><i/><i/></div><div className="lm-auth-copy"><span>PREMIUM MOBILITY, ON YOUR TIME</span><h1>Your city.<br/>Your driver.<br/><em>Your standard.</em></h1><p>Private rides, airport movement and executive transportation from one premium network.</p></div></section>
-    <form onSubmit={authenticate} className="lm-auth-form"><div className="lm-switch"><button type="button" className={authMode==='signin'?'active':''} onClick={()=>setAuthMode('signin')}>Sign in</button><button type="button" className={authMode==='signup'?'active':''} onClick={()=>setAuthMode('signup')}>Create account</button></div>{authMode==='signup'&&<label>Full name<input required minLength={2} value={name} onChange={e=>setName(e.target.value)}/></label>}<label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input required minLength={8} type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label>{authMessage&&<div className="lm-note">{authMessage}</div>}<button className="lm-primary" disabled={authBusy}>{authBusy?'Connecting…':authMode==='signin'?'Enter LUXE':'Create LUXE account'}</button><small className="lm-stage">Controlled closure environment · {LUXE_BACKEND_MODE}</small></form>
+    <form onSubmit={authenticate} className="lm-auth-form"><div className="lm-switch"><button type="button" className={authMode==='signin'?'active':''} onClick={()=>setAuthMode('signin')}>Sign in</button><button type="button" className={authMode==='signup'?'active':''} onClick={()=>setAuthMode('signup')}>Create account</button></div>{authMode==='signup'&&<label>Full name<input required minLength={2} value={name} onChange={e=>setName(e.target.value)}/></label>}<label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input required minLength={8} type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label>{authMessage&&<div className="lm-note">{authMessage}</div>}<button className="lm-primary" disabled={authBusy}>{authBusy?'Connecting…':authMode==='signin'?'Enter LUXE':'Create LUXE account'}</button><small className="lm-stage">Shared ON CALL infrastructure · {LUXE_BACKEND_MODE}</small></form>
   </main>
 
   if(profile?.role==='driver')return <main className="lm-shell"><header><div className="lm-wordmark dark">LUXE<small>DRIVER</small></div><button onClick={async()=>{await luxeMobility.auth.signOut();location.reload()}}>Sign out</button></header><section className="lm-driver-hero"><span>DRIVER NETWORK</span><h1>Available rides.</h1><p>Only rides matching your approved vehicle class appear here.</p></section><section className="lm-offers">{offers.length===0?<div className="lm-empty">No matching requests right now.</div>:offers.map(ride=><article key={ride.id}><div><strong>{ride.pickup_address}</strong><span>to</span><strong>{ride.destination_address}</strong><small>{ride.route_distance_miles} mi · {ride.route_duration_minutes} min · <Money value={ride.quoted_fare}/></small></div><button className="lm-primary" onClick={async()=>{await acceptRide(ride.id);await refresh(profile)}}>Accept ride</button></article>)}</section></main>
 
   return <main className="lm-shell">
     <header><div className="lm-wordmark dark">LUXE<small>ON DEMAND</small></div><div className="lm-user"><span>{profile?.full_name||'Rider'}</span><button onClick={async()=>{await luxeMobility.auth.signOut();location.reload()}}>Sign out</button></div></header>
-    <section className="lm-hero"><div><span>WHERE TO?</span><h1>Move like<br/>you mean it.</h1><p>Choose your class. Confirm your route. A verified driver accepts before the trip becomes active.</p></div><div className="lm-citycard"><b>ATL</b><span>Premium network preview</span></div></section>
+    <section className="lm-hero"><div><span>WHERE TO?</span><h1>Move like<br/>you mean it.</h1><p>Choose your class. Confirm your route. A verified driver accepts before the trip becomes active.</p></div><div className="lm-citycard"><b>ATL</b><span>Premium mobility network</span></div></section>
 
     {activeRide&&<section className="lm-active"><div><span>ACTIVE RIDE</span><h2>{statusCopy[activeRide.status]||activeRide.status}</h2><p>{activeRide.pickup_address}<b>→</b>{activeRide.destination_address}</p></div><div><Money value={activeRide.quoted_fare}/>{activeRide.status==='accepted'&&<button onClick={()=>startPayment(activeRide)}>Authorize fare</button>}{['matching','accepted','en_route'].includes(activeRide.status)&&<button className="ghost" onClick={async()=>{await cancelRide(activeRide.id,'Canceled by rider');await refresh(profile)}}>Cancel</button>}</div></section>}
 
-    <section className="lm-booker"><div className="lm-field"><span>01</span><label>Pickup<input value={pickup} onChange={e=>setPickup(e.target.value)} placeholder="Pickup address"/></label></div><div className="lm-field"><span>02</span><label>Destination<input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Where are you going?"/></label></div><div className="lm-route-metrics"><label>Route miles<input type="number" min="0.1" step="0.1" value={distance} onChange={e=>setDistance(Number(e.target.value))}/></label><label>Est. minutes<input type="number" min="1" step="1" value={minutes} onChange={e=>setMinutes(Number(e.target.value))}/></label><label>Schedule<input type="datetime-local" value={scheduledAt} onChange={e=>setScheduledAt(e.target.value)}/></label><small>Closure QA uses explicit route metrics until the production routing provider is connected.</small></div></section>
+    <section className="lm-booker">
+      <div className="lm-field"><span>01</span><label>Pickup<input value={pickup} onChange={e=>setPickup(e.target.value)} placeholder="Pickup address"/></label></div>
+      <div className="lm-field"><span>02</span><label>Destination<input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Where are you going?"/></label></div>
+      <div className="lm-route-metrics">
+        <div><strong>{distance>0?`${distance.toFixed(1)} mi`:'Route'}</strong><small>{minutes>0?`${minutes} min${routeSource?' · live route':''}`:'Price and ETA calculate from your addresses.'}</small></div>
+        <button type="button" className="lm-primary" onClick={calculateRoute} disabled={routeBusy||!pickup.trim()||!destination.trim()}>{routeBusy?'Calculating…':distance>0?'Refresh route':'Calculate route'}</button>
+        <label>Schedule<input type="datetime-local" value={scheduledAt} onChange={e=>setScheduledAt(e.target.value)}/></label>
+      </div>
+    </section>
 
-    <section className="lm-classes"><div className="lm-sectionhead"><span>SELECT YOUR CLASS</span><h2>Arrive correctly.</h2></div><div className="lm-classgrid">{vehicles.map(vehicle=><button key={vehicle.id} className={vehicleId===vehicle.id?'active':''} onClick={()=>setVehicleId(vehicle.id)}><div className="lm-car"><i/><i/></div><span>{vehicle.name}</span><p>{vehicle.description}</p><small>Up to {vehicle.capacity}</small><strong>{vehicleId===vehicle.id&&quote!=null?<Money value={quote}/>:<Money value={vehicle.minimum_fare}/>}</strong></button>)}</div><button className="lm-primary wide" onClick={submitRide} disabled={busy||!!activeRide}>{busy?'Requesting…':activeRide?'Complete or cancel active ride first':quote!=null?`Request ride · $${quote.toFixed(2)}`:'Request ride'}</button>{message&&<div className="lm-note">{message}</div>}</section>
+    <section className="lm-classes"><div className="lm-sectionhead"><span>SELECT YOUR CLASS</span><h2>Arrive correctly.</h2></div><div className="lm-classgrid">{vehicles.map(vehicle=><button key={vehicle.id} className={vehicleId===vehicle.id?'active':''} onClick={()=>setVehicleId(vehicle.id)}><div className="lm-car"><i/><i/></div><span>{vehicle.name}</span><p>{vehicle.description}</p><small>Up to {vehicle.capacity}</small><strong>{vehicleId===vehicle.id&&quote!=null?<Money value={quote}/>:<Money value={vehicle.minimum_fare}/>}</strong></button>)}</div><button className="lm-primary wide" onClick={submitRide} disabled={busy||!!activeRide||distance<=0||minutes<=0}>{busy?'Requesting…':activeRide?'Complete or cancel active ride first':distance<=0?'Calculate route first':quote!=null?`Request ride · $${quote.toFixed(2)}`:'Pricing ride…'}</button>{message&&<div className="lm-note">{message}</div>}</section>
 
     <section className="lm-history"><div className="lm-sectionhead"><span>YOUR MOVEMENT</span><h2>Ride history.</h2></div>{rides.length===0?<div className="lm-empty">Your rides will appear here from request through receipt.</div>:rides.map(ride=><article key={ride.id}><div><span className={`lm-status ${ride.status}`}/><div><strong>{ride.pickup_address}</strong><small>{ride.destination_address}</small><em>{statusCopy[ride.status]||ride.status}</em></div></div><div><Money value={ride.final_fare??ride.quoted_fare}/>{ride.status==='completed'&&<div className="lm-stars">{[1,2,3,4,5].map(value=><button key={value} onClick={async()=>{await rateRide(ride.id,value);setMessage('Rating saved.')}}>★</button>)}</div>}</div></article>)}</section>
 
