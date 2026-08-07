@@ -43,6 +43,12 @@ export type LuxeRide = {
   created_at:string
 }
 
+export type LuxeRoute = {
+  distanceMiles:number
+  durationMinutes:number
+  source:string
+}
+
 export async function loadVehicleClasses() {
   const { data,error } = await luxeMobility.from('lm_vehicle_classes').select('*').eq('is_active',true).order('sort_order')
   if(error) throw error
@@ -82,6 +88,13 @@ export async function loadMyProfile() {
   const {data,error}=await luxeMobility.from('lm_profiles').select('*').eq('auth_id',user.id).maybeSingle()
   if(error) throw error
   return data
+}
+
+export async function computeRoute(origin:string,destination:string) {
+  const {data,error}=await luxeMobility.functions.invoke('luxe-mobility-route',{body:{origin,destination}})
+  if(error) throw error
+  if(!data?.distanceMiles||!data?.durationMinutes)throw new Error(data?.error||'LUXE routing did not return a drivable route.')
+  return data as LuxeRoute
 }
 
 export async function quoteRide(vehicleClassId:string,distanceMiles:number,durationMinutes:number) {
