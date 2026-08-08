@@ -1,0 +1,10 @@
+{
+  "app": "luxe-on-demand-app",
+  "brand": "Luxe On Demand",
+  "service": "on-demand-beauty-cosmetic-services",
+  "status": "ok",
+  "schema_version": 1,
+  "release_gate": "enterprise-control-plane",
+  "authority": "MCP Gateway public.lod_*",
+  "generated_at": "2026-07-10T00:00:00-04:00"
+}
