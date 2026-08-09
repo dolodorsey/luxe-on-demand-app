@@ -11,9 +11,9 @@ export default function HomePage() {
       <div className="lm-current-media__copy">
         <span>LUXE ON DEMAND · PREMIUM MOBILITY</span>
         <strong>Your city. Your driver. Your standard.</strong>
-        <p>Private rides, airport movement and executive transportation from one verified premium network.</p>
+        <p>Private rides, airport movement and executive transportation unlock class-by-class as approved LUXE drivers become payout-ready and go on duty.</p>
       </div>
-      <div className="lm-current-media__status">MOBILITY BUILD</div>
+      <div className="lm-current-media__status">VERIFIED DRIVER NETWORK</div>
     </section>
     <LuxeSupplyStatusHost />
     <LuxeMobilityEntry />
