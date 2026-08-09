@@ -35,8 +35,7 @@ create policy lm_driver_applications_own_read on public.lm_driver_applications f
 
 create or replace function public.lm_is_operator()
 returns boolean language sql stable security definer set search_path='pg_catalog','public' as $$
-  select coalesce((auth.jwt()->'app_metadata'->'portal_roles') ? 'owner', false)
-    or exists (select 1 from public.org_members where user_id=auth.uid() and status='active' and role in ('owner','admin'));
+  select public.marketplace_operator_check();
 $$;
 
 create or replace function public.lm_submit_driver_application(
@@ -125,6 +124,7 @@ revoke all on function public.lm_is_operator() from public, anon;
 revoke all on function public.lm_submit_driver_application(text,text,text,text,text,text,text,text,integer,text,text,text) from public, anon;
 revoke all on function public.lm_review_driver_application(uuid,text,text,text,text,text,text) from public, anon;
 revoke all on function public.lm_approve_driver_application(uuid,text) from public, anon;
+grant execute on function public.lm_is_operator() to authenticated, service_role;
 grant execute on function public.lm_submit_driver_application(text,text,text,text,text,text,text,text,integer,text,text,text) to authenticated;
 grant execute on function public.lm_review_driver_application(uuid,text,text,text,text,text,text) to authenticated;
 grant execute on function public.lm_approve_driver_application(uuid,text) to authenticated;
