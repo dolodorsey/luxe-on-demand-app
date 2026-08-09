@@ -4,8 +4,8 @@ import { extname, join, relative } from 'node:path'
 const root = process.cwd()
 const sourceRoots = ['src']
 const extensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
-const approvedConfigFile = 'src/config/luxe-public-backend.ts'
-const approvedProjectRef = 'dzlmtvodpyhetvektfuo'
+const approvedConfigFile = 'src/config/luxe-mobility-backend.ts'
+const approvedProjectRef = 'cxdqkjvtpilvouwtbgdy'
 const failures = []
 
 function collect(directory) {
@@ -31,29 +31,30 @@ for (const path of sourceFiles) {
   if (file !== approvedConfigFile && /sb_publishable_[A-Za-z0-9_-]{20,}/.test(text)) {
     failures.push(`${file}: hardcoded Supabase publishable key detected outside approved binding`)
   }
+  if (/service_role|sb_secret_/i.test(text)) {
+    failures.push(`${file}: secret or service-role credential detected in browser source`)
+  }
 }
 
-const publicConfig = readFileSync(join(root, approvedConfigFile), 'utf8')
-if (!publicConfig.includes(`LUXE_APPROVED_PROJECT_REF = '${approvedProjectRef}'`)) {
-  failures.push(`${approvedConfigFile}: approved project reference changed unexpectedly`)
+const mobilityConfig = readFileSync(join(root, approvedConfigFile), 'utf8')
+if (!mobilityConfig.includes(`LUXE_MOBILITY_PROJECT_REF = '${approvedProjectRef}'`)) {
+  failures.push(`${approvedConfigFile}: approved mobility project reference changed unexpectedly`)
 }
-if (!/LUXE_APPROVED_PUBLISHABLE_KEY\s*=\s*'sb_publishable_[A-Za-z0-9_-]{20,}'/.test(publicConfig)) {
-  failures.push(`${approvedConfigFile}: approved publishable key binding is missing or malformed`)
+if (!/LUXE_MOBILITY_PUBLISHABLE_KEY\s*=\s*'sb_publishable_[A-Za-z0-9_-]{20,}'/.test(mobilityConfig)) {
+  failures.push(`${approvedConfigFile}: reviewed public publishable key binding is missing or malformed`)
 }
-if (/service_role|sb_secret_/i.test(publicConfig)) {
-  failures.push(`${approvedConfigFile}: secret or service-role credential detected`)
+if (!mobilityConfig.includes("LUXE_BACKEND_MODE = 'shared-sos-on-call-project'")) {
+  failures.push(`${approvedConfigFile}: shared backend mode is missing or stale`)
 }
 
-const supabaseModule = readFileSync(join(root, 'src/lib/supabase.ts'), 'utf8')
+const mobilityModule = readFileSync(join(root, 'src/lib/luxe-mobility.ts'), 'utf8')
 for (const requiredName of [
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-  'NEXT_PUBLIC_SUPABASE_PROJECT_REF',
-  'LUXE_APPROVED_PROJECT_REF',
-  'LUXE_APPROVED_PUBLISHABLE_KEY',
+  'LUXE_MOBILITY_SUPABASE_URL',
+  'LUXE_MOBILITY_PUBLISHABLE_KEY',
+  'LUXE_BACKEND_MODE',
 ]) {
-  if (!supabaseModule.includes(requiredName)) {
-    failures.push(`src/lib/supabase.ts: missing ${requiredName} guard or binding`)
+  if (!mobilityModule.includes(requiredName)) {
+    failures.push(`src/lib/luxe-mobility.ts: missing ${requiredName} binding`)
   }
 }
 
@@ -63,4 +64,4 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log(`LUXE backend isolation verified across ${sourceFiles.length} source files.`)
+console.log(`LUXE mobility backend isolation verified across ${sourceFiles.length} source files.`)
