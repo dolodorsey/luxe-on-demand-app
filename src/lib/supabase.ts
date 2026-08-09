@@ -5,15 +5,13 @@ import {
   LUXE_APPROVED_SUPABASE_URL,
 } from '../config/luxe-public-backend'
 
-export const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || LUXE_APPROVED_SUPABASE_URL
-
-export const supabasePublishableKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
-  LUXE_APPROVED_PUBLISHABLE_KEY
-export const LUXE_APP_URL = 'https://luxe-on-demand-app.vercel.app';
-export const LUXE_CONFIRM_URL = `${LUXE_APP_URL}/auth/confirm`;
+// LUXE Mobility has one reviewed public backend. Vercel still carries legacy
+// beauty-era NEXT_PUBLIC_SUPABASE_* values, so those variables must not be
+// allowed to override the mobility binding during build or runtime.
+export const supabaseUrl = LUXE_APPROVED_SUPABASE_URL
+export const supabasePublishableKey = LUXE_APPROVED_PUBLISHABLE_KEY
+export const LUXE_APP_URL = 'https://luxe-on-demand-app.vercel.app'
+export const LUXE_CONFIRM_URL = `${LUXE_APP_URL}/auth/confirm`
 
 const parsedSupabaseUrl = new URL(supabaseUrl)
 if (parsedSupabaseUrl.protocol !== 'https:' || !parsedSupabaseUrl.hostname.endsWith('.supabase.co')) {
@@ -21,10 +19,8 @@ if (parsedSupabaseUrl.protocol !== 'https:' || !parsedSupabaseUrl.hostname.endsW
 }
 
 const connectedProjectRef = parsedSupabaseUrl.hostname.split('.')[0]
-const approvedProjectRef =
-  process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim() || LUXE_APPROVED_PROJECT_REF
-if (connectedProjectRef !== approvedProjectRef) {
-  throw new Error(`LUXE backend mismatch: expected ${approvedProjectRef}, received ${connectedProjectRef}`)
+if (connectedProjectRef !== LUXE_APPROVED_PROJECT_REF) {
+  throw new Error(`LUXE backend mismatch: expected ${LUXE_APPROVED_PROJECT_REF}, received ${connectedProjectRef}`)
 }
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
@@ -35,6 +31,10 @@ export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   },
 })
 
+// Compatibility helpers retained only for archived beauty-era modules that are
+// still present in the repository. The production mobility surface does not use
+// their cs_* workflows. They all share the single approved mobility client so a
+// stale deployment environment can never reconnect LUXE to the retired project.
 export const signUp = async (
   email: string,
   password: string,
@@ -51,9 +51,9 @@ export const signUp = async (
 }
 
 export const resendConfirmation = async (email: string) => {
-  const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: LUXE_CONFIRM_URL } });
-  if (error) throw error;
-};
+  const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: LUXE_CONFIRM_URL } })
+  if (error) throw error
+}
 
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -102,7 +102,7 @@ export const createBooking = async (booking: {
   client_notes?: string
 }) => {
   const csUserId = await getCsUserId(booking.client_auth_id)
-  if (!csUserId) throw new Error('No LUXE client profile found')
+  if (!csUserId) throw new Error('No archived LUXE client profile found')
 
   const { data, error } = await supabase.rpc('cs_request_booking', {
     p_service_name: booking.subcategory_name,
