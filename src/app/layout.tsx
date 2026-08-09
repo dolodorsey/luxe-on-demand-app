@@ -3,14 +3,19 @@ import "./globals.css";
 import "./luxe-marketplace.css";
 
 export const metadata: Metadata = {
-  title: "LUXE On Demand — White-Glove Beauty Marketplace",
+  title: "LUXE On Demand — Premium Mobility",
   description:
-    "Request hair, makeup, nails, lashes, skincare, bridal and beauty concierge services from vetted mobile and studio talent.",
+    "Request premium black-car, SUV, airport and executive transportation from the verified LUXE driver network.",
   icons: { icon: "/favicon.ico" },
   openGraph: {
-    title: "LUXE On Demand",
-    description: "Beauty, delivered beautifully. Mobile or studio appointments matched with vetted talent.",
+    title: "LUXE On Demand — Premium Mobility",
+    description: "Private rides, airport movement and executive transportation from one verified premium network.",
     type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "LUXE On Demand — Premium Mobility",
+    description: "Your city. Your driver. Your standard.",
   },
 };
 
@@ -19,7 +24,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#100b0d",
+  themeColor: "#080b10",
   viewportFit: "cover",
 };
 
@@ -27,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <div className="app-shell pb-safe luxe-premium" data-app="luxe-on-demand">{children}</div>
+        <div className="app-shell pb-safe luxe-premium" data-app="luxe-mobility">{children}</div>
       </body>
     </html>
   );
