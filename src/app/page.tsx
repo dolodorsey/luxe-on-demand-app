@@ -1,4 +1,5 @@
 import LuxeMobilityEntry from '../components/LuxeMobilityEntry'
+import LuxeSupplyStatusHost from '../components/LuxeSupplyStatusHost'
 import { LUXE_CURRENT_MOTION } from '../config/luxe-mobility-backend'
 import './luxe-current-media.css'
 
@@ -14,6 +15,7 @@ export default function HomePage() {
       </div>
       <div className="lm-current-media__status">MOBILITY BUILD</div>
     </section>
+    <LuxeSupplyStatusHost />
     <LuxeMobilityEntry />
   </>
 }
