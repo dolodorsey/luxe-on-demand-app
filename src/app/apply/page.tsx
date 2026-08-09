@@ -1,5 +1,5 @@
-import LuxeStylistApplication from '../../components/LuxeStylistApplication'
+import { redirect } from 'next/navigation'
 
 export default function ApplyPage() {
-  return <LuxeStylistApplication />
+  redirect('/driver/apply')
 }
