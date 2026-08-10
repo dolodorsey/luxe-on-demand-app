@@ -1,11 +1,10 @@
-import LuxeStylistApplication from '../../../components/LuxeStylistApplication'
-import './stylist-apply.css'
+import { redirect } from 'next/navigation'
 
 export const metadata = {
-  title: 'Apply to LUXE — Professional Talent Network',
-  description: 'Apply to join the vetted LUXE On Demand beauty professional network.',
+  title: 'LUXE On Demand — Driver Network',
+  description: 'LUXE On Demand is premium mobility. Driver applications continue through the LUXE driver network.',
 }
 
-export default function StylistApplicationPage() {
-  return <LuxeStylistApplication />
+export default function RetiredStylistApplicationPage() {
+  redirect('/driver/apply')
 }
