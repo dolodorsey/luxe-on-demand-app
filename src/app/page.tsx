@@ -1,6 +1,7 @@
 import LuxeMobilityEntry from '../components/LuxeMobilityEntry'
 import LuxeSupplyStatusHost from '../components/LuxeSupplyStatusHost'
 import LuxeSubcategoryRestoreHost from '../components/LuxeSubcategoryRestoreHost'
+import LuxeShellControlHost from '../components/LuxeShellControlHost'
 import { LUXE_CURRENT_MOTION } from '../config/luxe-mobility-backend'
 import './luxe-current-media.css'
 
@@ -18,6 +19,7 @@ export default function HomePage() {
     </section>
     <LuxeSupplyStatusHost />
     <LuxeMobilityEntry />
+    <LuxeShellControlHost />
     <LuxeSubcategoryRestoreHost />
   </>
 }
