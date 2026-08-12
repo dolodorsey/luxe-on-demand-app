@@ -6,5 +6,5 @@ export const LUXE_MOBILITY_SUPABASE_URL = `https://${LUXE_MOBILITY_PROJECT_REF}.
 export const LUXE_MOBILITY_PUBLISHABLE_KEY = 'sb_publishable_x_QDbPwZuhbqB1bd58MLvg_ADSiFODN'
 export const LUXE_BACKEND_MODE = 'shared-sos-on-call-project' as const
 
-// Current approved creative lives in the central brand-graphics library, not the mobility database.
-export const LUXE_CURRENT_MOTION = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/kollective/animations/LUXE_ON_DEMAND_ANI.mp4'
+// Current approved LUXE motion lives in the central Creative Engine animation library.
+export const LUXE_CURRENT_MOTION = 'https://woqlhjodiedyqfvzweoe.supabase.co/storage/v1/object/public/animations/luxe-on-demand-ani.mp4'
