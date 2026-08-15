@@ -7,10 +7,13 @@ import { LUXE_CURRENT_MOTION } from '../config/luxe-mobility-backend'
 import './luxe-current-media.css'
 import './luxe-sos-structure.css'
 
+const PROVIDER_ONBOARDING_URL='https://forms.thekollectivehospitality.com/f/luxe/provider-onboarding'
+
 export default function HomePage() {
   return <>
     <header className="lm-current-brandbar" aria-label="LUXE On Demand">
       <img src="/brand/luxe-logo.webp" alt="LUXE On Demand" />
+      <a href={PROVIDER_ONBOARDING_URL} style={{marginLeft:'auto',fontSize:11,fontWeight:800,letterSpacing:'.08em',textTransform:'uppercase',color:'inherit',textDecoration:'none'}}>Provider network ↗</a>
     </header>
     <section className="lm-current-media" aria-label="LUXE premium mobility animation">
       <video src={LUXE_CURRENT_MOTION} autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
