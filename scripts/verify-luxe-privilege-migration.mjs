@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-const migrationPath = 'supabase/migrations/20260902114600_luxe_mobility_browser_privilege_hardening.sql'
+const migrationPath = 'supabase/migrations/20260902115001_luxe_mobility_browser_privilege_hardening.sql'
 const sql = fs.readFileSync(migrationPath, 'utf8')
 const executableSql = sql
   .replace(/--.*$/gm, '')
