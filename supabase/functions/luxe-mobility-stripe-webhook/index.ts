@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
   const readSecret = async (name: string) => {
     const direct = Deno.env.get(name)?.trim()
     if (direct) return direct
-    const { data, error } = await admin.rpc('sos_get_runtime_secret', { secret_name: name })
+    const { data, error } = await admin.rpc('lm_get_runtime_secret', { p_key: name })
     return error || typeof data !== 'string' ? '' : data.trim()
   }
   const stripeKey = (await readSecret('LUXE_MOBILITY_STRIPE_SECRET_KEY')) || (await readSecret('STRIPE_SECRET_KEY'))
