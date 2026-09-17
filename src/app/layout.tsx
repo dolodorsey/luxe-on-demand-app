@@ -10,11 +10,8 @@ export const metadata: Metadata = {
   applicationName: "LUXE On Demand",
   appleWebApp: { capable: true, title: "LUXE", statusBarStyle: "black-translucent" },
   icons: {
-    icon: [
-      { url: "/api/pwa-icon?size=192", sizes: "192x192", type: "image/png" },
-      { url: "/api/pwa-icon?size=512", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/api/pwa-icon?size=180", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: "/luxe-app-icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/luxe-app-icon.svg", type: "image/svg+xml" }],
   },
   openGraph: {
     title: "LUXE On Demand — Premium Mobility",
