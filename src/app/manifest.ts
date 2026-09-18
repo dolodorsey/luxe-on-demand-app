@@ -1,7 +1,5 @@
 import type { MetadataRoute } from 'next'
-
 export const dynamic='force-static'
-
 export default function manifest():MetadataRoute.Manifest{
   return {
     id:'/',
@@ -17,6 +15,10 @@ export default function manifest():MetadataRoute.Manifest{
     theme_color:'#080b10',
     categories:['travel','transportation','business'],
     prefer_related_applications:false,
-    icons:[{src:'/luxe-app-icon.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}],
+    icons:[
+      {src:'/luxe-app-icon-192.svg',sizes:'192x192',type:'image/svg+xml',purpose:'any'},
+      {src:'/luxe-app-icon-512.svg',sizes:'512x512',type:'image/svg+xml',purpose:'any'},
+      {src:'/luxe-app-icon-512.svg',sizes:'512x512',type:'image/svg+xml',purpose:'maskable'},
+    ],
   }
 }
