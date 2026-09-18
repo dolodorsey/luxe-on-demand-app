@@ -3,6 +3,19 @@
 import { useEffect,useState } from 'react'
 
 type PromptEvent=Event&{prompt:()=>Promise<{outcome:'accepted'|'dismissed'}>}
+
+function forceInstall(){try{return new URLSearchParams(location.search).get('install')==='1'}catch{return false}}
+function InstallQr(){
+  const [qr,setQr]=useState('');
+  useEffect(()=>{if(typeof window==='undefined'||window.innerWidth<760)return;try{const u=new URL(location.href);u.hash='';u.search='';u.searchParams.set('install','1');setQr('https://wfkohcwxxsrhcxhepfql.supabase.co/functions/v1/app-install-qr?url='+encodeURIComponent(u.toString()))}catch{}},[]);
+  if(!qr)return null;
+  return <aside aria-label="Scan to install app" style={{position:'fixed',right:22,bottom:22,zIndex:2147483002,width:188,padding:12,borderRadius:20,background:'rgba(7,8,11,.97)',border:'1px solid rgba(255,255,255,.16)',boxShadow:'0 24px 70px rgba(0,0,0,.48)',color:'#fff',fontFamily:'Arial,sans-serif'}}>
+    <img src={qr} alt="QR code to install this app" width="164" height="164" style={{display:'block',width:'100%',height:'auto',borderRadius:12,background:'#fff',padding:6}}/>
+    <strong style={{display:'block',marginTop:10,fontSize:10,letterSpacing:'.14em'}}>SCAN TO GET THE APP</strong>
+    <small style={{display:'block',marginTop:5,color:'rgba(255,255,255,.62)',fontSize:9,lineHeight:1.45}}>iPhone: Share → Add to Home Screen → Open as Web App → Add. Android: tap Install App.</small>
+  </aside>
+}
+
 const DISMISS_MS=7*24*60*60*1000
 const COLLECTOR='https://wfkohcwxxsrhcxhepfql.supabase.co/functions/v1/marketing-event-capture'
 const ios=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)
@@ -23,7 +36,8 @@ export default function InstallAppPrompt(){
     const isApple=ios();setApple(isApple)
     if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>undefined)
     const dismissed=Number(read('luxe:pwa-dismissed')||0);const eligible=!dismissed||Date.now()-dismissed>DISMISS_MS
-    const before=(e:Event)=>{e.preventDefault();setPrompt(e as PromptEvent);if(eligible)setTimeout(()=>setShow(true),1700)}
+    const before=(e:Event)=>{e.preventDefault();
+    if(forceInstall())window.setTimeout(()=>setShow(true),120);setPrompt(e as PromptEvent);if(eligible)setTimeout(()=>setShow(true),1700)}
     const done=()=>{setShow(false);track('app_install',{platform:isApple?'ios':'web',variant:'luxe_pwa'})}
     addEventListener('beforeinstallprompt',before);addEventListener('appinstalled',done)
     let timer=0;if(eligible&&isApple)timer=window.setTimeout(()=>setShow(true),4200)
@@ -32,7 +46,8 @@ export default function InstallAppPrompt(){
   if(!show)return null
   const close=()=>{write('luxe:pwa-dismissed',String(Date.now()));setShow(false);track('cta_click',{cta:'pwa_prompt_dismiss'})}
   const install=async()=>{track('app_install_click',{platform:apple?'ios':'web',variant:prompt?'native_prompt':'instructions'});if(prompt){const result=await prompt.prompt();setPrompt(null);if(result.outcome==='accepted')setShow(false);return}setSteps(true)}
-  return <div className="luxe-install" role="dialog" aria-modal="true" aria-label="Install LUXE On Demand"><section>
+  return <div className="luxe-install" role="dialog" aria-modal="true" aria-label="Install LUXE On Demand">
+    <InstallQr/><section>
     <button className="close" onClick={close} aria-label="Close">×</button>
     <div className="mark"><span>LUXE</span><small>ON DEMAND</small></div>
     {!steps?<div className="copy"><p className="eyebrow">PRIVATE MOBILITY. ALWAYS WITHIN REACH.</p><h2>YOUR DRIVER.<br/><em>ONE TAP</em><br/>AWAY.</h2><p>Add LUXE to your Home Screen for faster access to airport, executive and premium ride requests.</p><button className="primary" onClick={install}>{prompt?'INSTALL LUXE':'ADD LUXE TO HOME SCREEN'} <b>↗</b></button><button className="later" onClick={close}>Continue in browser</button></div>:
