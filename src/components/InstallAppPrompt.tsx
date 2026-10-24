@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect,useState } from 'react'
+import { LUXE_INSTALL_QR_ENDPOINT, LUXE_PWA_EVENT_CAPTURE_ENDPOINT } from '@/config/luxe-pwa-telemetry'
 
 type PromptEvent=Event&{prompt:()=>Promise<{outcome:'accepted'|'dismissed'}>}
 
 function forceInstall(){try{return new URLSearchParams(location.search).get('install')==='1'}catch{return false}}
 function InstallQr(){
   const [qr,setQr]=useState('');
-  useEffect(()=>{if(typeof window==='undefined'||window.innerWidth<760)return;try{const u=new URL(location.href);u.hash='';u.search='';u.searchParams.set('install','1');setQr('https://wfkohcwxxsrhcxhepfql.supabase.co/functions/v1/app-install-qr?url='+encodeURIComponent(u.toString()))}catch{}},[]);
+  useEffect(()=>{if(typeof window==='undefined'||window.innerWidth<760)return;try{const u=new URL(location.href);u.hash='';u.search='';u.searchParams.set('install','1');setQr(LUXE_INSTALL_QR_ENDPOINT+'?url='+encodeURIComponent(u.toString()))}catch{}},[]);
   if(!qr)return null;
   return <aside aria-label="Scan to install app" style={{position:'fixed',right:22,bottom:22,zIndex:2147483002,width:188,padding:12,borderRadius:20,background:'rgba(7,8,11,.97)',border:'1px solid rgba(255,255,255,.16)',boxShadow:'0 24px 70px rgba(0,0,0,.48)',color:'#fff',fontFamily:'Arial,sans-serif'}}>
     <img src={qr} alt="QR code to install this app" width="164" height="164" style={{display:'block',width:'100%',height:'auto',borderRadius:12,background:'#fff',padding:6}}/>
@@ -17,7 +18,7 @@ function InstallQr(){
 }
 
 const DISMISS_MS=7*24*60*60*1000
-const COLLECTOR='https://wfkohcwxxsrhcxhepfql.supabase.co/functions/v1/marketing-event-capture'
+const COLLECTOR=LUXE_PWA_EVENT_CAPTURE_ENDPOINT
 const ios=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)
 const standalone=()=>matchMedia('(display-mode: standalone)').matches||Boolean((navigator as Navigator&{standalone?:boolean}).standalone)
 const native=()=>Boolean((window as unknown as {Capacitor?:{isNativePlatform?:()=>boolean}}).Capacitor?.isNativePlatform?.())

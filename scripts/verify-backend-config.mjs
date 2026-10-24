@@ -5,6 +5,8 @@ const root = process.cwd()
 const sourceRoots = ['src']
 const extensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
 const approvedConfigFile = 'src/config/luxe-mobility-backend.ts'
+const approvedPublicTelemetryFile = 'src/config/luxe-pwa-telemetry.ts'
+const approvedPublicTelemetryBase = 'https://wfkohcwxxsrhcxhepfql.supabase.co/functions/v1'
 const approvedProjectRef = 'cxdqkjvtpilvouwtbgdy'
 const failures = []
 
@@ -25,7 +27,7 @@ for (const path of sourceFiles) {
   if (/\.n8n\.cloud|\/webhook\//i.test(text)) {
     failures.push(`${file}: legacy webhook or n8n integration detected`)
   }
-  if (file !== approvedConfigFile && /https:\/\/[a-z]{20}\.supabase\.co/i.test(text)) {
+  if (file !== approvedConfigFile && file !== approvedPublicTelemetryFile && /https:\/\/[a-z]{20}\.supabase\.co/i.test(text)) {
     failures.push(`${file}: hardcoded Supabase project URL detected outside approved binding`)
   }
   if (file !== approvedConfigFile && /sb_publishable_[A-Za-z0-9_-]{20,}/.test(text)) {
@@ -34,6 +36,22 @@ for (const path of sourceFiles) {
   if (/service_role|sb_secret_/i.test(text)) {
     failures.push(`${file}: secret or service-role credential detected in browser source`)
   }
+}
+
+const telemetryConfig = readFileSync(join(root, approvedPublicTelemetryFile), 'utf8')
+const telemetryUrls = telemetryConfig.match(/https:\/\/[a-z]{20}\.supabase\.co(?:\/[^\s'"`]*)?/gi) || []
+if (telemetryUrls.length !== 1 || telemetryUrls[0] !== approvedPublicTelemetryBase) {
+  failures.push(`${approvedPublicTelemetryFile}: only reviewed public BOH telemetry endpoint base is permitted`)
+}
+for (const required of [
+  'export const LUXE_INSTALL_QR_ENDPOINT = `${LUXE_PWA_BOH_PUBLIC_BASE}/app-install-qr`',
+  'export const LUXE_PWA_EVENT_CAPTURE_ENDPOINT = `${LUXE_PWA_BOH_PUBLIC_BASE}/marketing-event-capture`',
+]) {
+  if (!telemetryConfig.includes(required)) failures.push(`${approvedPublicTelemetryFile}: missing reviewed telemetry route ${required}`)
+}
+const pwaPrompt = readFileSync(join(root, 'src/components/InstallAppPrompt.tsx'), 'utf8')
+for (const name of ['LUXE_INSTALL_QR_ENDPOINT', 'LUXE_PWA_EVENT_CAPTURE_ENDPOINT']) {
+  if (!pwaPrompt.includes(name)) failures.push(`InstallAppPrompt must import scoped ${name}`)
 }
 
 const mobilityConfig = readFileSync(join(root, approvedConfigFile), 'utf8')
