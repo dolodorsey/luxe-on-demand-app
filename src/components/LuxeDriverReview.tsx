@@ -55,7 +55,16 @@ export default function LuxeDriverReview(){
       const {error}=await luxeMobility.rpc('lm_approve_driver_application',{p_application_id:app.id,p_review_note:app.review_note||null})
       if(error)throw error
       await load();setMessage('Driver approved. They remain offline until Stripe payout onboarding is complete and they choose Go online.')
-    }catch(error){setMessage(error instanceof Error?error.message:'Driver approval failed')}
+    }catch(error){
+      const reason=error&&typeof error==='object'&&'message' in error?error.message:null
+      if(reason==='Withdrawn application must be returned to review before approval'){
+        setMessage('This application was withdrawn. Confirm that returning it to review is authorized, then use Save review before approving.')
+      }else if(reason==='Rejected application must be returned to review before approval'){
+        setMessage('This application was rejected. Complete an authorized review, then use Save review before approving.')
+      }else{
+        setMessage(error instanceof Error?error.message:'Driver approval failed')
+      }
+    }
     finally{setBusy('')}
   }
 

@@ -23,6 +23,8 @@ Deno.serve(async(req)=>{
   if(userError||!user)return json({error:'Authentication required.'},401)
 
   const body=await req.json().catch(()=>({})) as Record<string,unknown>
+  if(!body || typeof body!=='object' || Array.isArray(body))return json({error:'Application body must be an object.'},400)
+  if(body.action!==undefined && typeof body.action!=='string')return json({error:'Action must be text.'},400)
   const action=String(body.action||'submit')
 
   if(action==='status'){
@@ -33,6 +35,9 @@ Deno.serve(async(req)=>{
 
   if(action!=='submit')return json({error:'Unsupported action.'},400)
 
+  const textFields=['fullName','email','phone','city','stateCode','vehicleClassId','vehicleMake','vehicleModel','vehicleColor','vehiclePlate','note']
+  if(textFields.some(key=>body[key]!==undefined && typeof body[key]!=='string'))return json({error:'Application text fields must be strings.'},400)
+  if(typeof body.vehicleYear!=='string' && typeof body.vehicleYear!=='number')return json({error:'Vehicle year must be a number.'},400)
   const vehicleYear=Number(body.vehicleYear)
   const {data,error}=await client.rpc('lm_submit_driver_application',{
     p_full_name:String(body.fullName||''),
